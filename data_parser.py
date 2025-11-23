@@ -1,182 +1,155 @@
-import io
-from pathlib import Path
-from typing import Optional, Dict, Any
+# data_parser.py
 
-import pandas as pd
+"""
+Utilities to turn user input (text or uploaded files)
+into a single plain-text string for Gemini.
 
-try:
-    from pypdf import PdfReader
-except ImportError:
-    PdfReader = None
+We keep imports light and do OPTIONAL imports inside functions
+so that missing libraries don't crash the whole app on import.
+"""
 
-try:
-    import docx
-except ImportError:
-    docx = None
+from typing import Optional
+from io import BytesIO
 
 
-def _read_txt(uploaded_file) -> str:
-    bytes_data = uploaded_file.read()
-    try:
-        return bytes_data.decode("utf-8", errors="ignore")
-    except Exception:
-        return bytes_data.decode(errors="ignore")
+def parse_input_data(
+    text_input: Optional[str] = "",
+    uploaded_file: Optional[BytesIO] = None,
+) -> str:
+    """
+    Return a plain-text version of the user's input.
 
+    Priority:
+    1. If text_input is non-empty -> use that.
+    2. Else, if uploaded_file is provided -> extract based on extension.
+    """
 
-def _read_pdf(uploaded_file) -> str:
-    if PdfReader is None:
-        return "PDF reader library not installed; please install 'pypdf'."
+    # 1. If user typed/pasted text, just use it.
+    if text_input and text_input.strip():
+        return text_input.strip()
 
-    reader = PdfReader(uploaded_file)
-    text_chunks = []
-    for page in reader.pages:
-        try:
-            text_chunks.append(page.extract_text() or "")
-        except Exception:
-            continue
-    return "\n\n".join(text_chunks)
-
-
-def _read_docx(uploaded_file) -> str:
-    if docx is None:
-        return "DOCX reader library not installed; please install 'python-docx'."
-
-    # uploaded_file is a SpooledTemporaryFile-like object
-    mem = io.BytesIO(uploaded_file.read())
-    document = docx.Document(mem)
-    paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
-    return "\n".join(paragraphs)
-
-
-def _read_csv(uploaded_file) -> str:
-    try:
-        df = pd.read_csv(uploaded_file)
-    except Exception:
-        uploaded_file.seek(0)
-        df = pd.read_csv(uploaded_file, encoding_errors="ignore")
-
-    desc = []
-    desc.append(f"Table data with {len(df)} rows and {len(df.columns)} columns.")
-    if len(df.columns) > 0:
-        desc.append("Columns: " + ", ".join(df.columns.astype(str)))
-    head_str = df.head(10).to_string(index=False)
-    desc.append("First rows:\n" + head_str)
-    return "\n\n".join(desc)
-
-
-def _read_xlsx(uploaded_file) -> str:
-    # Read first sheet only
-    xl = pd.ExcelFile(uploaded_file)
-    sheet_name = xl.sheet_names[0]
-    df = xl.parse(sheet_name)
-
-    desc = []
-    desc.append(f"Excel sheet '{sheet_name}' with {len(df)} rows and {len(df.columns)} columns.")
-    if len(df.columns) > 0:
-        desc.append("Columns: " + ", ".join(df.columns.astype(str)))
-    head_str = df.head(10).to_string(index=False)
-    desc.append("First rows:\n" + head_str)
-    return "\n\n".join(desc)
-
-
-def _extract_text_from_file(uploaded_file) -> str:
+    # 2. If a file is uploaded, handle based on extension.
     if uploaded_file is None:
         return ""
 
-    name = uploaded_file.name
-    suffix = Path(name).suffix.lower()
+    filename = (uploaded_file.name or "").lower()
 
-    # Reset pointer just in case
-    uploaded_file.seek(0)
-
-    if suffix == ".txt":
+    if filename.endswith(".txt"):
         return _read_txt(uploaded_file)
-    elif suffix == ".pdf":
+
+    if filename.endswith(".pdf"):
         return _read_pdf(uploaded_file)
-    elif suffix == ".docx":
+
+    if filename.endswith((".docx", ".doc")):
         return _read_docx(uploaded_file)
-    elif suffix == ".csv":
+
+    if filename.endswith(".csv"):
         return _read_csv(uploaded_file)
-    elif suffix in [".xlsx", ".xls"]:
+
+    if filename.endswith((".xlsx", ".xlsm", ".xls")):
         return _read_xlsx(uploaded_file)
-    else:
-        # Fallback: try to decode as text
-        return _read_txt(uploaded_file)
+
+    # Fallback: just try to decode as text
+    try:
+        return uploaded_file.read().decode("utf-8", errors="ignore")
+    except Exception:
+        return ""
 
 
-def _normalize_data_type(data_type: str) -> str:
-    mapping = {
-        "Dream": "dream",
-        "Memory": "memory",
-        "Daily Routine": "daily_routine",
-        "Weekly Routine": "weekly_routine",
-        "Office / Attendance Data": "office_attendance",
-        "Activity Log": "activity_log",
-        "Creative / Story": "creative_story",
-        "Mixed / Let AI Detect": "mixed"
-    }
-    return mapping.get(data_type, "mixed")
+# -------------------------
+# Individual format readers
+# -------------------------
 
 
-def parse_input(
-    raw_text: str,
-    uploaded_file,
-    data_type: str,
-    gemini
-) -> Dict[str, Any]:
+def _read_txt(file_obj: BytesIO) -> str:
+    try:
+        content = file_obj.read().decode("utf-8", errors="ignore")
+        return content.strip()
+    finally:
+        file_obj.seek(0)
+
+
+def _read_pdf(file_obj: BytesIO) -> str:
     """
-    Main entry used by app.py.
-
-    We DON'T over-structure here.
-    We simply:
-      - read whatever the user gave (text or file)
-      - unify it into a big, descriptive context string
-      - attach metadata (type, file name, etc.)
-
-    Gemini will then:
-      - understand the content
-      - infer scenes / events / patterns
-      - design the visual spec in a Data Humanism style.
+    Lightweight PDF text extractor using PyPDF2.
+    If PyPDF2 is not installed, return an empty string instead of crashing.
     """
+    try:
+        import PyPDF2  # type: ignore
+    except ImportError:
+        return ""
 
-    source_text = ""
+    text_chunks = []
+    try:
+        reader = PyPDF2.PdfReader(file_obj)
+        for page in reader.pages:
+            try:
+                page_text = page.extract_text() or ""
+                text_chunks.append(page_text)
+            except Exception:
+                continue
+    finally:
+        file_obj.seek(0)
 
-    if uploaded_file is not None:
-        file_text = _extract_text_from_file(uploaded_file)
-        source_text = file_text
-        file_name = uploaded_file.name
-        source_kind = "file"
-    else:
-        source_text = raw_text or ""
-        file_name = None
-        source_kind = "text"
+    return "\n".join(text_chunks).strip()
 
-    normalized_type = _normalize_data_type(data_type)
 
-    # Build a compact meta-description for Gemini
-    meta_description_parts = [
-        f"Data kind: {data_type} (normalized as '{normalized_type}').",
-        f"Source: {source_kind}.",
-    ]
-    if file_name:
-        meta_description_parts.append(f"Original file name: {file_name}.")
+def _read_docx(file_obj: BytesIO) -> str:
+    """
+    DOCX text extractor using python-docx.
+    If python-docx is not installed, return empty string.
+    """
+    try:
+        import docx  # type: ignore
+    except ImportError:
+        return ""
 
-    meta_description = " ".join(meta_description_parts)
+    try:
+        document = docx.Document(file_obj)
+        paragraphs = [p.text for p in document.paragraphs if p.text]
+        return "\n".join(paragraphs).strip()
+    finally:
+        file_obj.seek(0)
 
-    # Limit text length gently to avoid crazy-long prompts (Gemini can handle a lot,
-    # but we don't need millions of characters).
-    max_chars = 20000
-    if len(source_text) > max_chars:
-        truncated_note = "\n\n[Note: Content truncated for length. Only the first part is shown here.]"
-        source_text = source_text[:max_chars] + truncated_note
 
-    input_data: Dict[str, Any] = {
-        "data_kind": normalized_type,
-        "data_kind_label": data_type,
-        "source": source_kind,
-        "file_name": file_name,
-        "meta_description": meta_description,
-        "raw_text": source_text
-    }
+def _read_csv(file_obj: BytesIO) -> str:
+    """
+    Convert CSV into a readable text summary using pandas.
+    If pandas is not installed, return raw decoded text.
+    """
+    try:
+        import pandas as pd  # type: ignore
+    except ImportError:
+        try:
+            content = file_obj.read().decode("utf-8", errors="ignore")
+            return content.strip()
+        finally:
+            file_obj.seek(0)
 
-    return input_data
+    try:
+        df = pd.read_csv(file_obj)
+        return df.to_csv(index=False)
+    finally:
+        file_obj.seek(0)
+
+
+def _read_xlsx(file_obj: BytesIO) -> str:
+    """
+    Convert Excel into a readable text summary using pandas.
+    If pandas/openpyxl are not installed, return empty string.
+    """
+    try:
+        import pandas as pd  # type: ignore
+    except ImportError:
+        return ""
+
+    try:
+        # read all sheets and join
+        excel = pd.read_excel(file_obj, sheet_name=None)
+        parts = []
+        for name, df in excel.items():
+            parts.append(f"Sheet: {name}")
+            parts.append(df.to_csv(index=False))
+        return "\n\n".join(parts).strip()
+    finally:
+        file_obj.seek(0)
