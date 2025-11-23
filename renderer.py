@@ -12,14 +12,20 @@ def _get_num(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def _jitter(value: float, amount: float = 2.0) -> float:
-    """Apply a small random offset to mimic hand-drawn placement."""
+def _jitter(value: float, amount: float = 1.6) -> float:
+    """Small random offset to mimic hand-drawn placement."""
     return value + random.uniform(-amount, amount)
 
 
-def _wobble_path(x1: float, y1: float, x2: float, y2: float, wobble_strength: float = 4.0) -> str:
+def _wobble_path(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    wobble_strength: float = 3.5,
+) -> str:
     """
-    Generate a slightly imperfect SVG quadratic path between two points.
+    Slightly imperfect SVG quadratic path between two points.
     This mimics a hand-drawn line with a little wobble.
     """
     cx = (x1 + x2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
@@ -62,11 +68,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
-    # Optional title at top
+    # Optional title at top – slightly lower + smaller to avoid clipping
     if title_text:
         svg_parts.append(
-            f'<text x="{width / 2}" y="40" text-anchor="middle" '
-            f'font-family="Georgia, serif" font-size="26" '
+            f'<text x="{width / 2}" y="60" text-anchor="middle" '
+            f'font-family="Georgia, serif" font-size="24" '
             f'fill="#222">{_escape(title_text)}</text>'
         )
 
@@ -74,23 +80,23 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     for el in elements:
         el_type = (el.get("type") or "").lower()
 
-        # Normalize some common fields
+        # Normalize common fields
         fill = el.get("fill", "none")
         stroke = el.get("stroke", "#222222")
-        # Use thicker, marker-like defaults if not specified
-        stroke_width = _get_num(el.get("strokeWidth"), 2.0)
-        # Slight opacity variation for hand-drawn ink feel
-        opacity = _get_num(el.get("opacity"), random.uniform(0.85, 1.0))
+        # Thicker, marker-like default if not specified
+        stroke_width = _get_num(el.get("strokeWidth"), 2.1)
+        # Slight opacity variation for ink feel
+        opacity = _get_num(el.get("opacity"), random.uniform(0.86, 1.0))
 
         if el_type == "circle":
             cx_raw = _get_num(el.get("x"), width / 2)
             cy_raw = _get_num(el.get("y"), height / 2)
             r_raw = _get_num(el.get("radius"), 6)
 
-            # Jitter center and radius slightly for hand-drawn feel
-            cx = _jitter(cx_raw, amount=3.0)
-            cy = _jitter(cy_raw, amount=3.0)
-            r = max(_jitter(r_raw, amount=1.5), 0.5)
+            # Gentle jitter – enough to feel human but not messy
+            cx = _jitter(cx_raw, amount=2.5)
+            cy = _jitter(cy_raw, amount=2.5)
+            r = max(_jitter(r_raw, amount=1.2), 0.5)
 
             svg_parts.append(
                 f'<circle cx="{cx}" cy="{cy}" r="{r}" '
@@ -99,19 +105,18 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             )
 
         elif el_type == "line":
-            # Instead of a perfect line, render a wobbly path
+            # Render a wobbly path instead of a perfect line
             x1_raw = _get_num(el.get("x"), width / 2)
             y1_raw = _get_num(el.get("y"), height / 2)
             x2_raw = _get_num(el.get("x2"), x1_raw + 10)
             y2_raw = _get_num(el.get("y2"), y1_raw)
 
-            # Slight jitter on endpoints
-            x1 = _jitter(x1_raw, amount=2.5)
-            y1 = _jitter(y1_raw, amount=2.5)
-            x2 = _jitter(x2_raw, amount=2.5)
-            y2 = _jitter(y2_raw, amount=2.5)
+            x1 = _jitter(x1_raw, amount=2.0)
+            y1 = _jitter(y1_raw, amount=2.0)
+            x2 = _jitter(x2_raw, amount=2.0)
+            y2 = _jitter(y2_raw, amount=2.0)
 
-            d = _wobble_path(x1, y1, x2, y2, wobble_strength=4.0)
+            d = _wobble_path(x1, y1, x2, y2, wobble_strength=3.5)
 
             svg_parts.append(
                 f'<path d="{d}" fill="none" '
@@ -137,7 +142,6 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                     )
 
         elif el_type == "path":
-            # Use provided path but allow slight opacity + stroke adjustments
             d_raw = el.get("d") or ""
             if d_raw:
                 d = _escape(d_raw)
@@ -164,14 +168,14 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                 f'fill="{fill_text}" opacity="{opacity}">{content}</text>'
             )
 
-    # Simple legend at bottom-left
+    # Legend – placed just above the bottom margin to avoid the circle
     if legend:
-        legend_x = 40
-        legend_y = height - 120
-        line_height = 22
+        legend_x = 70
+        legend_y = height - 70
+        line_height = 20
 
         svg_parts.append(
-            f'<text x="{legend_x}" y="{legend_y - 10}" '
+            f'<text x="{legend_x}" y="{legend_y - 20}" '
             f'font-family="Georgia, serif" font-size="16" '
             f'fill="#222">Legend</text>'
         )
@@ -183,11 +187,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
             svg_parts.append(
                 f'<circle cx="{legend_x}" cy="{ly}" r="5" '
-                f'fill="{color}" stroke="#222" stroke-width="0.5" />'
+                f'fill="{color}" stroke="#222" stroke-width="0.7" />'
             )
             svg_parts.append(
                 f'<text x="{legend_x + 14}" y="{ly + 4}" '
-                f'font-family="Georgia, serif" font-size="13" '
+                f'font-family="Georgia, serif" font-size="12" '
                 f'fill="#222">{label}</text>'
             )
 
