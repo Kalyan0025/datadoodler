@@ -1,143 +1,182 @@
+# renderer.py
+
 from typing import Dict, Any, List
 
 
-def _scale(val: float, max_val: float) -> float:
-    """Scale normalized coordinate (0–1) into absolute SVG space."""
+def _get_num(value: Any, default: float = 0.0) -> float:
+    """Safely convert a value to float."""
     try:
-        return float(val) * float(max_val)
-    except:
-        return 0.0
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
-def _render_circle(shape: Dict[str, Any], width: int, height: int) -> str:
-    cx = _scale(shape.get("cx", 0.5), width)
-    cy = _scale(shape.get("cy", 0.5), height)
-    r = shape.get("r", 0.02) * min(width, height)
-
-    fill = shape.get("fill", "none")
-    stroke = shape.get("stroke", "#222")
-    stroke_width = shape.get("strokeWidth", 1)
-
-    return f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
-
-
-def _render_line(shape: Dict[str, Any], width: int, height: int) -> str:
-    x1 = _scale(shape.get("x1", 0.2), width)
-    y1 = _scale(shape.get("y1", 0.2), height)
-    x2 = _scale(shape.get("x2", 0.8), width)
-    y2 = _scale(shape.get("y2", 0.8), height)
-
-    stroke = shape.get("stroke", "#222")
-    stroke_width = shape.get("strokeWidth", 1)
-
-    return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{stroke}" stroke-width="{stroke_width}" />'
-
-
-def _render_path(shape: Dict[str, Any], width: int, height: int) -> str:
+def render_visual_spec(spec: Dict[str, Any]) -> str:
     """
-    Handle freeform SVG paths.
-    Gemini sends normalized coordinates inside the `d` string.
-    We scale numbers in order: x,y,x,y,...
-    """
-    raw_d = shape.get("d", "")
-    if not raw_d:
-        return ""
+    Convert a JSON visual specification into an SVG string.
 
-    # Scale numbers sequentially (x then y then x then y...)
-    import re
-    nums = re.findall(r"[-+]?\d*\.\d+|[-+]?\d+", raw_d)
-
-    scaled_nums = []
-    is_x = True
-    for n in nums:
-        v = float(n)
-        if is_x:
-            scaled_nums.append(str(v * width))
-        else:
-            scaled_nums.append(str(v * height))
-        is_x = not is_x
-
-    # Rebuild the path by replacing numbers one-by-one
-    def repl(match):
-        return scaled_nums.pop(0)
-
-    scaled_d = re.sub(r"[-+]?\d*\.\d+|[-+]?\d+", repl, raw_d)
-
-    stroke = shape.get("stroke", "#222")
-    fill = shape.get("fill", "none")
-    stroke_width = shape.get("strokeWidth", 1)
-
-    return f'<path d="{scaled_d}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
-
-
-def _render_polygon(shape: Dict[str, Any], width: int, height: int) -> str:
-    points = shape.get("points", [])
-    svg_points = " ".join(
-        f"{_scale(x, width)},{_scale(y, height)}" for x, y in points
-    )
-
-    fill = shape.get("fill", "none")
-    stroke = shape.get("stroke", "#222")
-    stroke_width = shape.get("strokeWidth", 1)
-
-    return f'<polygon points="{svg_points}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
-
-
-def _render_text(shape: Dict[str, Any], width: int, height: int) -> str:
-    text = shape.get("text", "")
-    x = _scale(shape.get("x", 0.1), width)
-    y = _scale(shape.get("y", 0.1), height)
-    size = shape.get("fontSize", shape.get("size", 14))
-    fill = shape.get("fill", "#222")
-    font_family = "Georgia, serif"
-
-    return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" font-family="{font_family}">{text}</text>'
-
-
-def render_svg_from_spec(spec: Dict[str, Any]) -> str:
-    """
-    Convert the visual_spec (JSON from Gemini) into an SVG string.
+    Expected spec format:
+      {
+        "canvas": {"width": ..., "height": ..., "background": "#..."},
+        "elements": [...],
+        "legend": [...],
+        "title": "..."
+      }
     """
 
     canvas = spec.get("canvas", {})
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
-    background = canvas.get("background", "#ffffff")
+    background = canvas.get("background", "#FDFBF7")
 
-    svg_parts: List[str] = []
+    elements: List[Dict[str, Any]] = spec.get("elements", []) or []
+    legend: List[Dict[str, Any]] = spec.get("legend", []) or []
+    title_text: str = spec.get("title", "") or ""
 
-    # SVG header
-    svg_parts.append(
-        f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
-        f'xmlns="http://www.w3.org/2000/svg">'
-    )
+    # Start SVG – make it responsive (scaled to container width)
+    svg_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
+    ]
 
     # Background
     svg_parts.append(
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
-    # Render shapes
-    for shape in spec.get("shapes", []):
-        t = shape.get("type")
-        if t == "circle":
-            svg_parts.append(_render_circle(shape, width, height))
-        elif t == "line":
-            svg_parts.append(_render_line(shape, width, height))
-        elif t == "path":
-            svg_parts.append(_render_path(shape, width, height))
-        elif t == "polygon":
-            svg_parts.append(_render_polygon(shape, width, height))
-        elif t == "text":
-            svg_parts.append(_render_text(shape, width, height))
-        else:
-            continue
+    # Optional title at top
+    if title_text:
+        svg_parts.append(
+            f'<text x="{width / 2}" y="40" text-anchor="middle" '
+            f'font-family="Georgia, serif" font-size="26" '
+            f'fill="#222">{_escape(title_text)}</text>'
+        )
 
-    # Render labels (optional)
-    for label in spec.get("labels", []):
-        svg_parts.append(_render_text(label, width, height))
+    # Core elements
+    for el in elements:
+        el_type = (el.get("type") or "").lower()
 
-    # Close SVG
+        if el_type == "circle":
+            cx = _get_num(el.get("x"), width / 2)
+            cy = _get_num(el.get("y"), height / 2)
+            r = max(_get_num(el.get("radius"), 4), 0.5)
+            fill = el.get("fill", "none")
+            stroke = el.get("stroke", "#222222")
+            sw = _get_num(el.get("strokeWidth"), 1)
+            opacity = _get_num(el.get("opacity"), 1.0)
+
+            svg_parts.append(
+                f'<circle cx="{cx}" cy="{cy}" r="{r}" '
+                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}" '
+                f'opacity="{opacity}" />'
+            )
+
+        elif el_type == "line":
+            x1 = _get_num(el.get("x"), width / 2)
+            y1 = _get_num(el.get("y"), height / 2)
+            x2 = _get_num(el.get("x2"), x1 + 10)
+            y2 = _get_num(el.get("y2"), y1)
+            stroke = el.get("stroke", "#222222")
+            sw = _get_num(el.get("strokeWidth"), 1)
+            opacity = _get_num(el.get("opacity"), 1.0)
+
+            svg_parts.append(
+                f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
+                f'stroke="{stroke}" stroke-width="{sw}" opacity="{opacity}" />'
+            )
+
+        elif el_type == "polygon":
+            pts = el.get("points") or []
+            if isinstance(pts, list) and pts:
+                pts_str = " ".join(
+                    f'{_get_num(p[0])},{_get_num(p[1])}'
+                    for p in pts
+                    if isinstance(p, (list, tuple)) and len(p) >= 2
+                )
+                fill = el.get("fill", "none")
+                stroke = el.get("stroke", "#222222")
+                sw = _get_num(el.get("strokeWidth"), 1)
+                opacity = _get_num(el.get("opacity"), 1.0)
+
+                svg_parts.append(
+                    f'<polygon points="{pts_str}" fill="{fill}" '
+                    f'stroke="{stroke}" stroke-width="{sw}" opacity="{opacity}" />'
+                )
+
+        elif el_type == "path":
+            d = el.get("d") or ""
+            if d:
+                fill = el.get("fill", "none")
+                stroke = el.get("stroke", "#222222")
+                sw = _get_num(el.get("strokeWidth"), 1.0)
+                opacity = _get_num(el.get("opacity"), 1.0)
+
+                svg_parts.append(
+                    f'<path d="{_escape(d)}" fill="{fill}" '
+                    f'stroke="{stroke}" stroke-width="{sw}" opacity="{opacity}" />'
+                )
+
+        elif el_type == "text":
+            tx = _get_num(el.get("x"), width / 2)
+            ty = _get_num(el.get("y"), height / 2)
+            content = _escape(el.get("text") or "")
+            font_size = _get_num(el.get("fontSize"), 14)
+            fill = el.get("fill", "#222222")
+            anchor = el.get("textAnchor", "start")
+
+            svg_parts.append(
+                f'<text x="{tx}" y="{ty}" text-anchor="{anchor}" '
+                f'font-family="Georgia, serif" font-size="{font_size}" '
+                f'fill="{fill}">{content}</text>'
+            )
+
+    # Simple legend at bottom-left
+    if legend:
+        legend_x = 40
+        legend_y = height - 120
+        line_height = 22
+
+        svg_parts.append(
+            f'<text x="{legend_x}" y="{legend_y - 10}" '
+            f'font-family="Georgia, serif" font-size="16" '
+            f'fill="#222">Legend</text>'
+        )
+
+        for idx, item in enumerate(legend):
+            ly = legend_y + idx * line_height
+            color = item.get("color", "#222222")
+            label = _escape(item.get("label", ""))
+
+            svg_parts.append(
+                f'<circle cx="{legend_x}" cy="{ly}" r="5" '
+                f'fill="{color}" stroke="#222" stroke-width="0.5" />'
+            )
+            svg_parts.append(
+                f'<text x="{legend_x + 14}" y="{ly + 4}" '
+                f'font-family="Georgia, serif" font-size="13" '
+                f'fill="#222">{label}</text>'
+            )
+
+    # Fallback message if no elements
+    if not elements:
+        svg_parts.append(
+            f'<text x="{width / 2}" y="{height / 2}" text-anchor="middle" '
+            f'font-family="Georgia, serif" font-size="20" fill="#999999">'
+            f'No visual elements generated — check JSON spec.</text>'
+        )
+
     svg_parts.append("</svg>")
+    return "".join(svg_parts)
 
-    return "\n".join(svg_parts)
+
+def _escape(text: str) -> str:
+    """Escape basic XML entities."""
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
