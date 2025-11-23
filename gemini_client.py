@@ -14,7 +14,7 @@ class GeminiClient:
         genai.configure(api_key=self.api_key)
 
         # Use Flash model (fastest + supports JSON reliably)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = genai.GenerativeModel("gemini-flash-latest")
 
     def generate(self, system_instruction: str, user_content: str):
         """
