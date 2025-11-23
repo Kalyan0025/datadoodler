@@ -3,9 +3,9 @@
 from typing import Dict, Any, List
 import random
 
-
-LEGEND_RESERVED_HEIGHT = 140   # bottom band reserved for legend
-CONTENT_TOP_MARGIN = 90        # minimum y for main drawing
+# Bottom band reserved for legend / "how to read"
+LEGEND_RESERVED_HEIGHT = 140
+CONTENT_TOP_MARGIN = 90  # minimum y for main drawing
 
 
 def _get_num(value: Any, default: float = 0.0) -> float:
@@ -60,6 +60,73 @@ def _escape(text: str) -> str:
     )
 
 
+def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
+    """
+    Compute a bounding box of the main drawing elements (not including legend).
+    We use this later to scale and center the entire composition so it uses
+    most of the canvas.
+    """
+    min_x = None
+    max_x = None
+    min_y = None
+    max_y = None
+
+    for el in elements:
+        el_type = (el.get("type") or "").lower()
+
+        if el_type == "circle":
+            x = _get_num(el.get("x"), width / 2)
+            y = _get_num(el.get("y"), height / 2)
+            r = _get_num(el.get("radius"), 0)
+            xs = [x - r, x + r]
+            ys = [y - r, y + r]
+
+        elif el_type == "line":
+            x1 = _get_num(el.get("x"), width / 2)
+            y1 = _get_num(el.get("y"), height / 2)
+            x2 = _get_num(el.get("x2"), x1 + 10)
+            y2 = _get_num(el.get("y2"), y1)
+            xs = [x1, x2]
+            ys = [y1, y2]
+
+        elif el_type == "polygon":
+            pts = el.get("points") or []
+            xs, ys = [], []
+            for p in pts:
+                if isinstance(p, (list, tuple)) and len(p) >= 2:
+                    xs.append(_get_num(p[0]))
+                    ys.append(_get_num(p[1]))
+            if not xs or not ys:
+                continue
+
+        elif el_type == "text":
+            x = _get_num(el.get("x"), width / 2)
+            y = _get_num(el.get("y"), height / 2)
+            xs = [x]
+            ys = [y]
+
+        else:
+            # Skip paths for bbox – they’re usually grid/mandala scaffolds;
+            # Gemini already places them reasonably.
+            continue
+
+        local_min_x = min(xs)
+        local_max_x = max(xs)
+        local_min_y = min(ys)
+        local_max_y = max(ys)
+
+        if min_x is None or local_min_x < min_x:
+            min_x = local_min_x
+        if max_x is None or local_max_x > max_x:
+            max_x = local_max_x
+        if min_y is None or local_min_y < min_y:
+            min_y = local_min_y
+        if max_y is None or local_max_y > max_y:
+            max_y = local_max_y
+
+    return min_x, min_y, max_x, max_y
+
+
 def render_visual_spec(spec: Dict[str, Any]) -> str:
     """
     Convert a JSON visual specification into an SVG string.
@@ -90,12 +157,12 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
-    # Background
+    # Background paper
     svg_parts.append(
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
-    # Title
+    # Title at top
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="60" text-anchor="middle" '
@@ -103,10 +170,51 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             f'{_escape(title_text)}</text>'
         )
 
-    # Main drawing band boundaries
+    # Content band geometry
     content_bottom = height - LEGEND_RESERVED_HEIGHT - 20
+    margin_left_right = width * 0.1
+    margin_top = CONTENT_TOP_MARGIN + 10
+    margin_bottom = content_bottom - 10
 
-    # Core elements
+    # 1️⃣ Compute bounding box of the drawing, then compute scale + translation
+    min_x, min_y, max_x, max_y = _compute_bbox(elements, width, height)
+
+    if (
+        min_x is not None
+        and max_x is not None
+        and min_y is not None
+        and max_y is not None
+        and max_x > min_x
+        and max_y > min_y
+    ):
+        orig_cx = (min_x + max_x) / 2.0
+        orig_cy = (min_y + max_y) / 2.0
+
+        avail_w = (width - 2 * margin_left_right)
+        avail_h = (margin_bottom - margin_top)
+
+        sx = avail_w / (max_x - min_x)
+        sy = avail_h / (max_y - min_y)
+        scale = min(sx, sy) * 0.9  # keep a little breathing room
+
+        target_cx = width / 2.0
+        target_cy = (margin_top + margin_bottom) / 2.0
+
+        def tx(x: float) -> float:
+            return target_cx + (x - orig_cx) * scale
+
+        def ty(y: float) -> float:
+            return target_cy + (y - orig_cy) * scale
+
+    else:
+        # Fallback: no scaling
+        def tx(x: float) -> float:
+            return x
+
+        def ty(y: float) -> float:
+            return y
+
+    # 2️⃣ Draw core elements, applying scale + hand-drawn jitter
     for el in elements:
         el_type = (el.get("type") or "").lower()
 
@@ -128,9 +236,12 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             cy_raw = _get_num(el.get("y"), height / 2)
             r_raw = _get_num(el.get("radius"), 8)
 
-            cx = _jitter(cx_raw, amount=2.3)
-            cy = _clamp_y(_jitter(cy_raw, amount=2.3), height)
-            r = max(_jitter(r_raw, amount=1.0), 0.8)
+            cx_scaled = tx(cx_raw)
+            cy_scaled = ty(cy_raw)
+
+            cx = _jitter(cx_scaled, amount=2.3)
+            cy = _clamp_y(_jitter(cy_scaled, amount=2.3), height)
+            r = max(_jitter(r_raw * (scale if "scale" in locals() else 1.0), amount=1.0), 0.8)
 
             svg_parts.append(
                 f'<circle cx="{cx}" cy="{cy}" r="{r}" '
@@ -144,10 +255,15 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             x2_raw = _get_num(el.get("x2"), x1_raw + 10)
             y2_raw = _get_num(el.get("y2"), y1_raw)
 
-            x1 = _jitter(x1_raw, amount=2.0)
-            y1 = _clamp_y(_jitter(y1_raw, amount=2.0), height)
-            x2 = _jitter(x2_raw, amount=2.0)
-            y2 = _clamp_y(_jitter(y2_raw, amount=2.0), height)
+            x1_scaled = tx(x1_raw)
+            y1_scaled = ty(y1_raw)
+            x2_scaled = tx(x2_raw)
+            y2_scaled = ty(y2_raw)
+
+            x1 = _jitter(x1_scaled, amount=2.0)
+            y1 = _clamp_y(_jitter(y1_scaled, amount=2.0), height)
+            x2 = _jitter(x2_scaled, amount=2.0)
+            y2 = _clamp_y(_jitter(y2_scaled, amount=2.0), height)
 
             d = _wobble_path(x1, y1, x2, y2, wobble_strength=3.0)
 
@@ -163,8 +279,12 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                 jittered_points = []
                 for p in pts:
                     if isinstance(p, (list, tuple)) and len(p) >= 2:
-                        px = _jitter(_get_num(p[0]), amount=1.8)
-                        py = _clamp_y(_jitter(_get_num(p[1]), amount=1.8), height)
+                        px_raw = _get_num(p[0])
+                        py_raw = _get_num(p[1])
+                        px_scaled = tx(px_raw)
+                        py_scaled = ty(py_raw)
+                        px = _jitter(px_scaled, amount=1.8)
+                        py = _clamp_y(_jitter(py_scaled, amount=1.8), height)
                         jittered_points.append(f"{px},{py}")
                 if jittered_points:
                     pts_str = " ".join(jittered_points)
@@ -175,11 +295,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                     )
 
         elif el_type == "path":
+            # For paths (mandala circles, etc.), we keep coordinates as-is,
+            # since Gemini usually designs them with the full layout in mind.
             d_raw = el.get("d") or ""
             if d_raw:
                 d = _escape(d_raw)
-                # Try to clamp using a simple transform if needed is complex; for now assume
-                # path designed within band by model.
                 svg_parts.append(
                     f'<path d="{d}" fill="{fill}" '
                     f'stroke="{stroke}" stroke-width="{stroke_width}" '
@@ -190,8 +310,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             tx_raw = _get_num(el.get("x"), width / 2)
             ty_raw = _get_num(el.get("y"), height / 2)
 
-            tx = _jitter(tx_raw, amount=1.2)
-            ty = _clamp_y(_jitter(ty_raw, amount=1.2), height)
+            tx_scaled_val = tx(tx_raw)
+            ty_scaled_val = ty(ty_raw)
+
+            tx_final = _jitter(tx_scaled_val, amount=1.2)
+            ty_final = _clamp_y(_jitter(ty_scaled_val, amount=1.2), height)
 
             content = _escape(el.get("text") or "")
             font_size = _get_num(el.get("fontSize"), 14)
@@ -199,12 +322,12 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             anchor = el.get("textAnchor", "start")
 
             svg_parts.append(
-                f'<text x="{tx}" y="{ty}" text-anchor="{anchor}" '
+                f'<text x="{tx_final}" y="{ty_final}" text-anchor="{anchor}" '
                 f'font-family="Georgia, serif" font-size="{font_size}" '
                 f'fill="{fill_text}" opacity="{opacity}">{content}</text>'
             )
 
-    # Legend – in reserved bottom band
+    # 3️⃣ Legend – in reserved bottom band, clean and non-overlapping
     if legend:
         legend_top = height - LEGEND_RESERVED_HEIGHT + 30
         legend_left = 70
