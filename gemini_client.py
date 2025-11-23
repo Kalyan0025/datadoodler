@@ -7,7 +7,7 @@ import google.generativeai as genai
 
 class GeminiClient:
     """
-    Simple wrapper around Google Generative AI Gemini model.
+    Wrapper around Google Gemini Flash for Data Humanism visual generation.
 
     Usage:
         gemini = GeminiClient(api_key=...)
@@ -17,33 +17,34 @@ class GeminiClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "models/gemini-1.5-flash"
+        model_name: str = "models/gemini-flash-latest"
     ):
-        # Allow passing key directly or via environment
+        # Load API key
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
-            raise ValueError("GEMINI_API_KEY is not set. Add it to Streamlit secrets or environment.")
+            raise ValueError("GEMINI_API_KEY is missing. Add it in Streamlit secrets.")
 
+        # Configure client
         genai.configure(api_key=self.api_key)
         self.model_name = model_name
 
     def generate(self, system_instruction: str, user_content: str) -> str:
         """
-        Call Gemini with a system instruction and user content.
-        Returns plain text (model's text output).
+        Ask Gemini to generate text based on a system instruction and user content.
+        Returns the model's raw text output.
         """
 
-        # ✅ system_instruction belongs here, when creating the model
+        # System instructions must be set at model creation time
         model = genai.GenerativeModel(
             model_name=self.model_name,
             system_instruction=system_instruction
         )
 
-        # ✅ generate_content only takes the content (string or list), no system_instruction kwarg
+        # Only the user content goes here
         response = model.generate_content(user_content)
 
-        # Basic safety: return text or raise a clear error
+        # Validate output
         if not hasattr(response, "text") or response.text is None:
-            raise RuntimeError("Gemini returned an empty response or no .text field.")
+            raise RuntimeError("Gemini did not return a valid .text output.")
 
         return response.text
