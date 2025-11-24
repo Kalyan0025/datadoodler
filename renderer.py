@@ -104,7 +104,29 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 
     return min_x, min_y, max_x, max_y
 
+def _adjust_legend(legend: List[Dict[str, Any]], canvas_width: int) -> List[Dict[str, Any]]:
+    """Arrange the legend horizontally or vertically based on available space."""
+    legend_area = canvas_width - 40  # 40px padding for edges
+    
+    if len(legend) < 5:
+        space_per_item = legend_area / len(legend)
+        x_position = 20  # Initial offset
+        for item in legend:
+            item['x'] = x_position
+            item['y'] = 850  # Fixed y position for bottom legend
+            x_position += space_per_item
+    else:
+        space_per_item = (canvas_width - 40) / len(legend)
+        y_position = 850
+        for item in legend:
+            item['x'] = 40  # Fixed x position for vertical legend
+            item['y'] = y_position
+            y_position += space_per_item
+
+    return legend
+
 def render_visual_spec(spec: Dict[str, Any]) -> str:
+    """Convert a JSON visual specification into an SVG string."""
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
@@ -143,7 +165,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="50" text-anchor="middle" '
-            f'font-family="Dancing Script, cursive" font-size="24" fill="#222">'
+            f'font-family="Dancing Script, cursive" font-size="24" fill="#222"> '
             f'{_escape(title_text)}</text>'
         )
 
@@ -332,6 +354,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                     f'<polygon points="{legend_left-5},{ly+7} {legend_left+5},{ly+7} {legend_left},{ly-5}" '
                     f'fill="{color}" stroke="#222" stroke-width="0.7" />'
                 )
+            elif shape == "swirl":
+                svg_parts.append(
+                    f'<path d="M{legend_left},{ly} Q{legend_left + 5},{ly + 10} {legend_left},{ly + 15} Q{legend_left - 5},{ly + 10} {legend_left},{ly}" '
+                    f'fill="none" stroke="{color}" stroke-width="0.7" opacity="0.8" />'
+                )
 
             svg_parts.append(
                 f'<text x="{legend_left + 18}" y="{ly + 4}" '
@@ -341,3 +368,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
+"""
+
+# Saving the final version with the shapes properly reflected in the legend
+with open(renderer_file_path, 'w') as file:
+    file.write(updated_renderer_cleaned)
+
+# Output the first few lines to verify
+updated_renderer_cleaned[:1000]
