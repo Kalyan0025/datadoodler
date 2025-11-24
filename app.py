@@ -116,10 +116,11 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 0;
         padding: 36px 24px;
-        cursor: pointer;
+        cursor: pointer !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: visible;
+        user-select: none;
     }
     
     /* External corner points */
@@ -190,9 +191,30 @@ st.markdown("""
         font-weight: 300;
     }
     
-    /* Hide Streamlit buttons */
+    /* Position buttons behind cards */
+    .stButton {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 1 !important;
+        margin: 0 !important;
+    }
+    
     .stButton button {
-        display: none !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+    }
+    
+    /* Cards positioned relatively to contain buttons */
+    div[data-testid="column"] {
+        position: relative !important;
     }
     
     /* Input section */
@@ -691,21 +713,22 @@ for idx, (data_type, description) in enumerate(DATA_TYPES.items()):
     with cols[idx % 3]:
         selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
         
+        # Display card with description (positioned behind button)
+        st.markdown(f"""
+        <div class="data-type-card {selected_class}" style="position: relative; z-index: 0;">
+            <div class="card-title">{data_type}</div>
+            <div class="card-description">{description}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Create invisible button overlay
         if st.button(
-            f"{data_type}",
+            f"select_{data_type}",
             key=f"btn_{data_type}",
             use_container_width=True,
         ):
             st.session_state.selected_data_type = data_type
             st.rerun()
-        
-        # Display card with description
-        st.markdown(f"""
-        <div class="data-type-card {selected_class}">
-            <div class="card-title">{data_type}</div>
-            <div class="card-description">{description}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
