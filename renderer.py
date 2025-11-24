@@ -14,7 +14,7 @@ def _get_num(value: Any, default: float = 0.0) -> float:
     except (TypeError, ValueError):
         return default
 
-def _jitter(value: float, amount: float = 2.2) -> float:
+def _jitter(value: float, amount: float = 2.0) -> float:
     """Small random offset to mimic hand-drawn placement."""
     return value + random.uniform(-amount, amount)
 
@@ -36,7 +36,7 @@ def _wobble_path(
     y1: float,
     x2: float,
     y2: float,
-    wobble_strength: float = 5.0,
+    wobble_strength: float = 3.0,
 ) -> str:
     """Slightly imperfect SVG quadratic path between two points."""
     cx = (x1 + x2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
@@ -128,21 +128,38 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
       {
         "canvas": {"width": ..., "height": ..., "background": "#..."},
         "elements": [...],
-        "legend": [...],
+        "legend": [...],   # or {"title": "...", "items": [...]}
         "title": "..."
       }
 
+    Supported element types: circle, line, polygon, path, text.
+    Any other element type will be safely ignored.
     """
 
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
 
-    background = canvas.get("background") or "#F7F3EB"
+    # Accept either "background" or "background_color"
+    background = (
+        canvas.get("background")
+        or canvas.get("background_color")
+        or "#F7F3EB"
+    )
 
     elements: List[Dict[str, Any]] = spec.get("elements", []) or []
-    legend_title = spec.get("legend", {}).get("title", "Legend")
-    legend_items = spec.get("legend", {}).get("items", [])
+
+    raw_legend = spec.get("legend") or []
+    legend_items: List[Dict[str, Any]]
+    legend_title = "Legend"
+
+    # Allow legend as list or as dict {title, items}
+    if isinstance(raw_legend, dict):
+        legend_title = raw_legend.get("title", "Legend") or "Legend"
+        legend_items = raw_legend.get("items", []) or []
+    else:
+        legend_items = raw_legend
+
     title_text: str = spec.get("title", "") or ""
 
     svg_parts: List[str] = [
@@ -152,12 +169,18 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
-    # Background paper
+    # Background paper (dynamic based on mood)
     svg_parts.append(
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
-    # Title at top
+    # Light paper border (slightly more pronounced)
+    svg_parts.append(
+        f'<rect x="16" y="16" width="{width-32}" height="{height-32}" '
+        f'fill="none" stroke="#E1D7C6" stroke-width="2" />'
+    )
+
+    # Title at top (larger, with slight jitter)
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="50" text-anchor="middle" '
@@ -203,6 +226,8 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     else:
         # Fallback: no scaling
+        scale = 1.0
+
         def tx(x: float) -> float:
             return x
 
@@ -212,6 +237,10 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     # 2️⃣ Draw core elements, applying scale + hand-drawn jitter
     for el in elements:
         el_type = (el.get("type") or "").lower()
+
+        if el_type not in {"circle", "line", "polygon", "path", "text"}:
+            # Ignore any unsupported / semantic types (arc, cluster, etc.)
+            continue
 
         fill = el.get("fill", None)
         stroke = el.get("stroke", None)
@@ -224,20 +253,20 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         if not stroke:
             stroke = "#222222"
 
-        stroke_width = _get_num(el.get("strokeWidth"), 2.5)
-        opacity = _get_num(el.get("opacity"), random.uniform(0.85, 1.0))
+        stroke_width = _get_num(el.get("strokeWidth"), 2.0)
+        opacity = _get_num(el.get("opacity"), random.uniform(0.86, 1.0))
 
         if el_type == "circle":
             cx_raw = _get_num(el.get("x"), width / 2)
             cy_raw = _get_num(el.get("y"), height / 2)
-            r_raw = _get_num(el.get("radius"), 10)
+            r_raw = _get_num(el.get("radius"), 8)
 
             cx_scaled = tx(cx_raw)
             cy_scaled = ty(cy_raw)
 
-            cx = _jitter(cx_scaled, amount=3.0)
-            cy = _clamp_y(_jitter(cy_scaled, amount=3.0), height)
-            r = max(_jitter(r_raw * scale, amount=1.0), 1.0)
+            cx = _jitter(cx_scaled, amount=2.3)
+            cy = _clamp_y(_jitter(cy_scaled, amount=2.3), height)
+            r = max(_jitter(r_raw * scale, amount=1.0), 0.8)
 
             svg_parts.append(
                 f'<circle cx="{cx}" cy="{cy}" r="{r}" '
@@ -256,12 +285,12 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             x2_scaled = tx(x2_raw)
             y2_scaled = ty(y2_raw)
 
-            x1 = _jitter(x1_scaled, amount=3.0)
-            y1 = _clamp_y(_jitter(y1_scaled, amount=3.0), height)
-            x2 = _jitter(x2_scaled, amount=3.0)
-            y2 = _clamp_y(_jitter(y2_scaled, amount=3.0), height)
+            x1 = _jitter(x1_scaled, amount=2.0)
+            y1 = _clamp_y(_jitter(y1_scaled, amount=2.0), height)
+            x2 = _jitter(x2_scaled, amount=2.0)
+            y2 = _clamp_y(_jitter(y2_scaled, amount=2.0), height)
 
-            d = _wobble_path(x1, y1, x2, y2, wobble_strength=5.0)
+            d = _wobble_path(x1, y1, x2, y2, wobble_strength=3.0)
 
             svg_parts.append(
                 f'<path d="{d}" fill="none" '
@@ -279,8 +308,8 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                         py_raw = _get_num(p[1])
                         px_scaled = tx(px_raw)
                         py_scaled = ty(py_raw)
-                        px = _jitter(px_scaled, amount=2.0)
-                        py = _clamp_y(_jitter(py_scaled, amount=2.0), height)
+                        px = _jitter(px_scaled, amount=1.8)
+                        py = _clamp_y(_jitter(py_scaled, amount=1.8), height)
                         jittered_points.append(f"{px},{py}")
                 if jittered_points:
                     pts_str = " ".join(jittered_points)
@@ -290,6 +319,16 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                         f'opacity="{opacity}" />'
                     )
 
+        elif el_type == "path":
+            d_raw = el.get("d") or ""
+            if d_raw:
+                d = _escape(d_raw)
+                svg_parts.append(
+                    f'<path d="{d}" fill="{fill}" '
+                    f'stroke="{stroke}" stroke-width="{stroke_width}" '
+                    f'opacity="{opacity}" />'
+                )
+
         elif el_type == "text":
             tx_raw = _get_num(el.get("x"), width / 2)
             ty_raw = _get_num(el.get("y"), height / 2)
@@ -297,8 +336,8 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             tx_scaled_val = tx(tx_raw)
             ty_scaled_val = ty(ty_raw)
 
-            tx_final = _jitter(tx_scaled_val, amount=1.5)
-            ty_final = _clamp_y(_jitter(ty_scaled_val, amount=1.5), height)
+            tx_final = _jitter(tx_scaled_val, amount=1.2)
+            ty_final = _clamp_y(_jitter(ty_scaled_val, amount=1.2), height)
 
             content = _escape(el.get("text") or "")
             font_size = _get_num(el.get("fontSize"), 14)
