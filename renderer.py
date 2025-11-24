@@ -107,7 +107,7 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 def _adjust_legend(legend: List[Dict[str, Any]], canvas_width: int) -> List[Dict[str, Any]]:
     """Arrange the legend horizontally or vertically based on available space."""
     legend_area = canvas_width - 40  # 40px padding for edges
-
+    
     if len(legend) < 5:
         space_per_item = legend_area / len(legend)
         x_position = 20  # Initial offset
@@ -363,11 +363,3 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
-"""
-
-# Saving the final version of the code with shape variations in the legend
-with open(renderer_file_path, 'w') as file:
-    file.write(updated_renderer_cleaned)
-
-# Output the first few lines to verify
-updated_renderer_cleaned[:1000]
