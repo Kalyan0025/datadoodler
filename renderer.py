@@ -290,16 +290,6 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                         f'opacity="{opacity}" />'
                     )
 
-        elif el_type == "path":
-            d_raw = el.get("d") or ""
-            if d_raw:
-                d = _escape(d_raw)
-                svg_parts.append(
-                    f'<path d="{d}" fill="{fill}" '
-                    f'stroke="{stroke}" stroke-width="{stroke_width}" '
-                    f'opacity="{opacity}" />'
-                )
-
         elif el_type == "text":
             tx_raw = _get_num(el.get("x"), width / 2)
             ty_raw = _get_num(el.get("y"), height / 2)
