@@ -375,20 +375,36 @@ st.markdown("""
         color: #e5e7eb !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
-        padding: 14px 40px !important;
+        padding: 40px 28px !important;
         font-weight: 400 !important;
-        font-size: 1rem !important;
-        letter-spacing: 0.01em !important;
+        font-size: 1.4rem !important;
+        letter-spacing: -0.01em !important;
         transition: all 0.3s ease !important;
+        height: auto !important;
+        min-height: 120px !important;
     }
     
     .stButton button:hover {
+        background: rgba(224, 118, 56, 0.05) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #e5e7eb !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(224, 118, 56, 0.15) !important;
+    }
+    
+    /* Style for primary buttons (Generate button) */
+    .stButton button[kind="primary"] {
+        padding: 14px 40px !important;
+        font-size: 1rem !important;
+        min-height: auto !important;
+    }
+    
+    .stButton button[kind="primary"]:hover {
         background: rgba(224, 118, 56, 0.08) !important;
         border-color: #E07638 !important;
         border-width: 2px !important;
         color: #E07638 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(224, 118, 56, 0.2) !important;
     }
     
     /* Canvas section */
@@ -432,10 +448,13 @@ st.markdown("""
     .stRadio [role="radiogroup"] {
         gap: 12px !important;
         margin-bottom: 20px !important;
+        display: flex !important;
+        flex-direction: row !important;
     }
     
     .stRadio [role="radiogroup"] > div {
         position: relative !important;
+        flex: 1 !important;
     }
     
     .stRadio [role="radiogroup"] > div::before {
@@ -480,6 +499,11 @@ st.markdown("""
         font-weight: 300 !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
+        width: 100% !important;
+        text-align: center !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
     .stRadio [role="radiogroup"] label:hover {
@@ -487,6 +511,31 @@ st.markdown("""
         border-width: 2px !important;
         background: rgba(224, 118, 56, 0.05) !important;
         color: #e5e7eb !important;
+    }
+    
+    /* Hide the default radio circle */
+    .stRadio [role="radiogroup"] input[type="radio"] {
+        display: none !important;
+    }
+    
+    .stRadio [role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
+    
+    /* Style for selected radio button */
+    .stRadio [role="radiogroup"] label[data-selected="true"],
+    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked) label {
+        background: rgba(224, 118, 56, 0.1) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #e5e7eb !important;
+    }
+    
+    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked)::before,
+    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked)::after {
+        background: #E07638 !important;
+        width: 8px !important;
+        height: 8px !important;
     }
     
     .stRadio [role="radiogroup"] label div {
@@ -532,15 +581,16 @@ st.markdown("""
         height: 8px;
     }
     
-    .stFileUploader > div {
+    /* Hide default Streamlit file uploader styling */
+    .stFileUploader > div > div {
         background-color: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
-        padding: 20px !important;
+        padding: 30px 20px !important;
         transition: all 0.3s ease !important;
     }
     
-    .stFileUploader > div:hover {
+    .stFileUploader:hover > div > div {
         border-color: #E07638 !important;
         border-width: 2px !important;
         background: rgba(224, 118, 56, 0.05) !important;
@@ -552,28 +602,79 @@ st.markdown("""
         font-size: 0.875rem !important;
     }
     
+    .stFileUploader section {
+        border: none !important;
+        padding: 0 !important;
+    }
+    
+    .stFileUploader section > div {
+        background: transparent !important;
+        border: none !important;
+    }
+    
     .stFileUploader button {
         background: rgba(40, 40, 40, 0.5) !important;
         border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
         font-weight: 400 !important;
-        padding: 8px 20px !important;
+        padding: 10px 24px !important;
         transition: all 0.3s ease !important;
     }
     
     .stFileUploader button:hover {
         border-color: #E07638 !important;
+        border-width: 2px !important;
         background: rgba(224, 118, 56, 0.1) !important;
         color: #E07638 !important;
     }
     
-    /* Info/warning boxes */
-    .stAlert {
-        background-color: #1a1a2e !important;
-        border: 1px solid #2a2a3e !important;
-        border-radius: 8px !important;
-        color: #e5e7eb !important;
+    /* Hide drag and drop text styling */
+    .stFileUploader small {
+        color: #6b7280 !important;
+        font-weight: 300 !important;
+    }
+    
+    /* Custom success message styling */
+    .stSuccess {
+        background-color: rgba(224, 118, 56, 0.1) !important;
+        border: 1px solid rgba(224, 118, 56, 0.3) !important;
+        border-radius: 0 !important;
+        color: #E07638 !important;
+        padding: 12px 16px !important;
+        font-weight: 400 !important;
+        position: relative !important;
+    }
+    
+    .stSuccess::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 6px;
+        height: 6px;
+        background: #E07638;
+        z-index: 10;
+    }
+    
+    .stSuccess::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: #E07638;
+        z-index: 10;
+    }
+    
+    .stSuccess > div {
+        color: #E07638 !important;
+    }
+    
+    /* Hide Streamlit success icon */
+    .stSuccess svg {
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -673,25 +774,28 @@ if 'selected_data_type' not in st.session_state:
 cols = st.columns(3)
 for idx, (data_type, description) in enumerate(DATA_TYPES.items()):
     with cols[idx % 3]:
-        selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
-        
+        # Create button that updates session state
         if st.button(
-            f"{data_type}",
+            data_type,
             key=f"btn_{data_type}",
             use_container_width=True,
+            type="secondary"
         ):
             st.session_state.selected_data_type = data_type
             st.rerun()
-        
-        # Display card with description
-        st.markdown(f"""
-        <div class="data-type-card {selected_class}">
-            <div class="card-title">{data_type}</div>
-            <div class="card-description">{description}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Display selected card info below buttons
+if st.session_state.selected_data_type:
+    st.markdown(f"""
+    <div style="max-width: 1200px; margin: -40px auto 40px auto; padding: 0 20px;">
+        <div class="data-type-card selected">
+            <div class="card-title">{st.session_state.selected_data_type}</div>
+            <div class="card-description">{DATA_TYPES[st.session_state.selected_data_type]}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # Show input section only if a data type is selected
