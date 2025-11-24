@@ -115,12 +115,12 @@ st.markdown("""
         background: rgba(40, 40, 40, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 0;
-        padding: 36px 24px;
-        cursor: pointer !important;
+        padding: 32px 24px 24px 24px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: visible;
         user-select: none;
+        margin-bottom: 12px;
     }
     
     /* External corner points */
@@ -191,30 +191,66 @@ st.markdown("""
         font-weight: 300;
     }
     
-    /* Position buttons behind cards */
+    /* Remove button overlay styling */
     .stButton {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        z-index: 1 !important;
-        margin: 0 !important;
+        margin-top: 16px !important;
     }
     
     .stButton button {
+        background: rgba(40, 40, 40, 0.3) !important;
+        color: #e5e7eb !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 0 !important;
+        padding: 10px 24px !important;
+        font-weight: 400 !important;
+        font-size: 0.9rem !important;
+        letter-spacing: 0.01em !important;
+        transition: all 0.3s ease !important;
         width: 100% !important;
-        height: 100% !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        opacity: 0 !important;
         cursor: pointer !important;
+        position: relative !important;
     }
     
-    /* Cards positioned relatively to contain buttons */
-    div[data-testid="column"] {
-        position: relative !important;
+    .stButton button:hover {
+        background: rgba(224, 118, 56, 0.08) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #E07638 !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    /* Add corners to card buttons */
+    .stButton::before {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton:hover::before,
+    .stButton:hover::after {
+        background: #E07638;
+        width: 8px;
+        height: 8px;
     }
     
     /* Input section */
@@ -713,17 +749,17 @@ for idx, (data_type, description) in enumerate(DATA_TYPES.items()):
     with cols[idx % 3]:
         selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
         
-        # Display card with description (positioned behind button)
+        # Display card with description
         st.markdown(f"""
-        <div class="data-type-card {selected_class}" style="position: relative; z-index: 0;">
+        <div class="data-type-card {selected_class}">
             <div class="card-title">{data_type}</div>
             <div class="card-description">{description}</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Create invisible button overlay
+        # Add clickable button below card
         if st.button(
-            f"select_{data_type}",
+            f"Select {data_type}",
             key=f"btn_{data_type}",
             use_container_width=True,
         ):
