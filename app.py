@@ -26,11 +26,9 @@ st.set_page_config(
 # -------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
     /* Global styles */
     * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
     }
     
     /* Hide Streamlit branding */
@@ -50,7 +48,7 @@ st.markdown("""
     /* Hero section */
     .hero-section {
         text-align: center;
-        padding: 80px 20px 60px 20px;
+        padding: 60px 20px 40px 20px;
         max-width: 1200px;
         margin: 0 auto;
         position: relative;
@@ -60,20 +58,17 @@ st.markdown("""
         font-size: 3.5rem;
         font-weight: 300;
         color: #e5e7eb;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         line-height: 1.2;
         letter-spacing: -0.02em;
-        position: relative;
-        display: inline-block;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
     }
     
     .spiral-container {
         position: absolute;
-        top: -40px;
+        top: 20px;
         right: -60px;
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
         opacity: 0.6;
     }
     
@@ -84,30 +79,26 @@ st.markdown("""
     }
     
     @keyframes spiral-rotate {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
     
     .hero-subtitle {
-        font-size: 1.25rem;
-        color: #a0a0a0;
+        font-size: 1.15rem;
+        color: #9ca3af;
         max-width: 800px;
-        margin: 0 auto 3rem auto;
+        margin: 0 auto 2.5rem auto;
         line-height: 1.6;
-        font-weight: 400;
+        font-weight: 300;
     }
     
-    /* Data type selection grid */
+    /* Data type grid */
     .data-type-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
         max-width: 1200px;
-        margin: 0 auto 60px auto;
+        margin: 0 auto 50px auto;
         padding: 0 20px;
     }
     
@@ -115,41 +106,29 @@ st.markdown("""
         background: rgba(40, 40, 40, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 0;
-        padding: 40px 28px;
+        padding: 36px 24px;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: visible;
-    }
-    
-    /* External corner points */
-    .data-type-card::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
         transition: all 0.3s ease;
+        position: relative;
     }
     
+    .data-type-card::before,
     .data-type-card::after {
         content: '';
         position: absolute;
-        top: -4px;
-        right: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
         transition: all 0.3s ease;
     }
+    
+    .data-type-card::before { top: -4px; left: -4px; }
+    .data-type-card::after { top: -4px; right: -4px; }
     
     .data-type-card:hover {
         border-color: #E07638;
         border-width: 2px;
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(224, 118, 56, 0.15);
         background: rgba(224, 118, 56, 0.05);
     }
     
@@ -164,7 +143,6 @@ st.markdown("""
         border-color: #E07638;
         border-width: 2px;
         background: rgba(224, 118, 56, 0.08);
-        box-shadow: 0 4px 16px rgba(224, 118, 56, 0.2);
     }
     
     .data-type-card.selected::before,
@@ -175,61 +153,45 @@ st.markdown("""
     }
     
     .card-title {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         font-weight: 400;
         color: #e5e7eb;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         letter-spacing: -0.01em;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
     }
     
     .card-description {
         font-size: 0.9rem;
         color: #9ca3af;
-        line-height: 1.7;
+        line-height: 1.6;
         font-weight: 300;
     }
     
     /* Input section */
     .input-section {
         max-width: 900px;
-        margin: 0 auto 60px auto;
+        margin: 40px auto;
         padding: 0 20px;
     }
     
     .section-title {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: #e5e7eb;
+        font-size: 0.75rem;
+        color: #9ca3af;
         margin-bottom: 16px;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.875rem;
+        letter-spacing: 0.1em;
+        font-weight: 500;
     }
     
-    /* Streamlit overrides */
+    /* Streamlit component styling */
     .stTextArea {
         position: relative !important;
     }
     
-    .stTextArea::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
+    .stTextArea::before,
     .stTextArea::after {
         content: '';
         position: absolute;
-        top: -4px;
-        right: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -238,21 +200,21 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
+    .stTextArea::before { top: -4px; left: -4px; }
+    .stTextArea::after { top: -4px; right: -4px; }
+    
     .stTextArea:focus-within::before,
-    .stTextArea:focus-within::after,
-    .stTextArea:hover::before,
-    .stTextArea:hover::after {
+    .stTextArea:focus-within::after {
         background: #E07638;
         width: 8px;
         height: 8px;
     }
     
     .stTextArea textarea {
-        background-color: rgba(40, 40, 40, 0.3) !important;
+        background: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-size: 0.95rem !important;
         font-weight: 300 !important;
         transition: all 0.3s ease !important;
@@ -262,37 +224,17 @@ st.markdown("""
         border-color: #E07638 !important;
         border-width: 2px !important;
         box-shadow: none !important;
-        background-color: rgba(224, 118, 56, 0.05) !important;
-    }
-    
-    .stTextArea textarea:hover {
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        background-color: rgba(224, 118, 56, 0.05) !important;
+        background: rgba(224, 118, 56, 0.05) !important;
     }
     
     .stTextInput {
         position: relative !important;
     }
     
-    .stTextInput::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
+    .stTextInput::before,
     .stTextInput::after {
         content: '';
         position: absolute;
-        top: -4px;
-        right: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -301,17 +243,18 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
+    .stTextInput::before { top: -4px; left: -4px; }
+    .stTextInput::after { top: -4px; right: -4px; }
+    
     .stTextInput:focus-within::before,
-    .stTextInput:focus-within::after,
-    .stTextInput:hover::before,
-    .stTextInput:hover::after {
+    .stTextInput:focus-within::after {
         background: #E07638;
         width: 8px;
         height: 8px;
     }
     
     .stTextInput input {
-        background-color: rgba(40, 40, 40, 0.3) !important;
+        background: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
@@ -323,187 +266,35 @@ st.markdown("""
         border-color: #E07638 !important;
         border-width: 2px !important;
         box-shadow: none !important;
-        background-color: rgba(224, 118, 56, 0.05) !important;
-    }
-    
-    .stTextInput input:hover {
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        background-color: rgba(224, 118, 56, 0.05) !important;
-    }
-    
-    /* Button styling */
-    .stButton {
-        position: relative !important;
-    }
-    
-    .stButton::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton::after {
-        content: '';
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton:hover::before,
-    .stButton:hover::after {
-        background: #E07638;
-        width: 8px;
-        height: 8px;
-    }
-    
-    .stButton button {
-        background: rgba(40, 40, 40, 0.3) !important;
-        color: #e5e7eb !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 0 !important;
-        padding: 40px 28px !important;
-        font-weight: 400 !important;
-        font-size: 1.4rem !important;
-        letter-spacing: -0.01em !important;
-        transition: all 0.3s ease !important;
-        height: auto !important;
-        min-height: 120px !important;
-    }
-    
-    .stButton button:hover {
         background: rgba(224, 118, 56, 0.05) !important;
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        color: #e5e7eb !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(224, 118, 56, 0.15) !important;
-    }
-    
-    /* Style for primary buttons (Generate button) */
-    .stButton button[kind="primary"] {
-        padding: 14px 40px !important;
-        font-size: 1rem !important;
-        min-height: auto !important;
-    }
-    
-    .stButton button[kind="primary"]:hover {
-        background: rgba(224, 118, 56, 0.08) !important;
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        color: #E07638 !important;
-    }
-    
-    /* Canvas section */
-    .canvas-section {
-        max-width: 1400px;
-        margin: 60px auto;
-        padding: 0 20px;
-    }
-    
-    .canvas-title {
-        font-size: 1.75rem;
-        font-weight: 300;
-        color: #e5e7eb;
-        margin-bottom: 24px;
-        text-align: center;
-        letter-spacing: -0.01em;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    
-    .canvas-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0 auto;
-        position: relative;
-    }
-    
-    .canvas-container svg {
-        width: 100%;
-        height: auto;
-        display: block;
     }
     
     /* Radio buttons */
     .stRadio > label {
         color: #9ca3af !important;
         font-weight: 400 !important;
-        font-size: 0.875rem !important;
+        font-size: 0.75rem !important;
         margin-bottom: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
     }
     
     .stRadio [role="radiogroup"] {
         gap: 12px !important;
         margin-bottom: 20px !important;
         display: flex !important;
-        flex-direction: row !important;
-    }
-    
-    .stRadio [role="radiogroup"] > div {
-        position: relative !important;
-        flex: 1 !important;
-    }
-    
-    .stRadio [role="radiogroup"] > div::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stRadio [role="radiogroup"] > div::after {
-        content: '';
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stRadio [role="radiogroup"] > div:hover::before,
-    .stRadio [role="radiogroup"] > div:hover::after {
-        background: #E07638;
-        width: 8px;
-        height: 8px;
     }
     
     .stRadio [role="radiogroup"] label {
         background: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
-        padding: 12px 24px !important;
+        padding: 10px 20px !important;
         color: #9ca3af !important;
         font-weight: 300 !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        width: 100% !important;
-        text-align: center !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        font-size: 0.9rem !important;
     }
     
     .stRadio [role="radiogroup"] label:hover {
@@ -513,46 +304,16 @@ st.markdown("""
         color: #e5e7eb !important;
     }
     
-    /* Hide the default radio circle */
-    .stRadio [role="radiogroup"] input[type="radio"] {
-        display: none !important;
-    }
-    
-    .stRadio [role="radiogroup"] label > div:first-child {
-        display: none !important;
-    }
-    
-    /* Style for selected radio button */
-    .stRadio [role="radiogroup"] label[data-selected="true"],
-    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked) label {
-        background: rgba(224, 118, 56, 0.1) !important;
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        color: #e5e7eb !important;
-    }
-    
-    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked)::before,
-    .stRadio [role="radiogroup"] div:has(input[type="radio"]:checked)::after {
-        background: #E07638 !important;
-        width: 8px !important;
-        height: 8px !important;
-    }
-    
-    .stRadio [role="radiogroup"] label div {
-        color: inherit !important;
-    }
-    
-    /* File uploader styling */
+    /* File uploader */
     .stFileUploader {
         margin-bottom: 20px;
         position: relative !important;
     }
     
-    .stFileUploader::before {
+    .stFileUploader::before,
+    .stFileUploader::after {
         content: '';
         position: absolute;
-        top: -4px;
-        left: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -561,18 +322,8 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    .stFileUploader::after {
-        content: '';
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        width: 6px;
-        height: 6px;
-        background: rgba(224, 118, 56, 0.5);
-        z-index: 10;
-        pointer-events: none;
-        transition: all 0.3s ease;
-    }
+    .stFileUploader::before { top: -4px; left: -4px; }
+    .stFileUploader::after { top: -4px; right: -4px; }
     
     .stFileUploader:hover::before,
     .stFileUploader:hover::after {
@@ -581,16 +332,14 @@ st.markdown("""
         height: 8px;
     }
     
-    /* Hide default Streamlit file uploader styling */
-    .stFileUploader > div > div {
-        background-color: rgba(40, 40, 40, 0.3) !important;
+    .stFileUploader section {
+        background: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
-        padding: 30px 20px !important;
-        transition: all 0.3s ease !important;
+        padding: 24px !important;
     }
     
-    .stFileUploader:hover > div > div {
+    .stFileUploader section:hover {
         border-color: #E07638 !important;
         border-width: 2px !important;
         background: rgba(224, 118, 56, 0.05) !important;
@@ -599,82 +348,70 @@ st.markdown("""
     .stFileUploader label {
         color: #9ca3af !important;
         font-weight: 300 !important;
-        font-size: 0.875rem !important;
-    }
-    
-    .stFileUploader section {
-        border: none !important;
-        padding: 0 !important;
-    }
-    
-    .stFileUploader section > div {
-        background: transparent !important;
-        border: none !important;
     }
     
     .stFileUploader button {
-        background: rgba(40, 40, 40, 0.5) !important;
+        background: rgba(60, 60, 60, 0.5) !important;
         border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
         font-weight: 400 !important;
-        padding: 10px 24px !important;
-        transition: all 0.3s ease !important;
+        padding: 8px 20px !important;
     }
     
     .stFileUploader button:hover {
         border-color: #E07638 !important;
-        border-width: 2px !important;
-        background: rgba(224, 118, 56, 0.1) !important;
         color: #E07638 !important;
     }
     
-    /* Hide drag and drop text styling */
-    .stFileUploader small {
-        color: #6b7280 !important;
-        font-weight: 300 !important;
-    }
-    
-    /* Custom success message styling */
+    /* Success/Info messages */
     .stSuccess {
-        background-color: rgba(224, 118, 56, 0.1) !important;
+        background: rgba(224, 118, 56, 0.1) !important;
         border: 1px solid rgba(224, 118, 56, 0.3) !important;
         border-radius: 0 !important;
         color: #E07638 !important;
-        padding: 12px 16px !important;
+        padding: 12px !important;
+    }
+    
+    .stInfo {
+        background: rgba(100, 100, 100, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 0 !important;
+        color: #9ca3af !important;
+    }
+    
+    /* Button */
+    .stButton button {
+        background: rgba(40, 40, 40, 0.3) !important;
+        color: #e5e7eb !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 0 !important;
+        padding: 12px 32px !important;
         font-weight: 400 !important;
-        position: relative !important;
+        transition: all 0.3s ease !important;
     }
     
-    .stSuccess::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 6px;
-        height: 6px;
-        background: #E07638;
-        z-index: 10;
-    }
-    
-    .stSuccess::after {
-        content: '';
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        width: 6px;
-        height: 6px;
-        background: #E07638;
-        z-index: 10;
-    }
-    
-    .stSuccess > div {
+    .stButton button:hover {
+        background: rgba(224, 118, 56, 0.08) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
         color: #E07638 !important;
     }
     
-    /* Hide Streamlit success icon */
-    .stSuccess svg {
-        display: none !important;
+    /* Canvas section */
+    .canvas-section {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .canvas-title {
+        font-size: 1.5rem;
+        font-weight: 300;
+        color: #e5e7eb;
+        margin-bottom: 24px;
+        text-align: center;
+        letter-spacing: -0.01em;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -731,25 +468,15 @@ st.markdown("""
     <div style="position: relative; display: inline-block;">
         <h1 class="hero-title">Data Doodler</h1>
         <div class="spiral-container">
-            <svg class="spiral" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <svg class="spiral" viewBox="0 0 100 100">
                 <defs>
                     <linearGradient id="spiralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#E07638;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#ff8c42;stop-opacity:1" />
+                        <stop offset="0%" style="stop-color:#E07638" />
+                        <stop offset="100%" style="stop-color:#ff8c42" />
                     </linearGradient>
                 </defs>
                 <path d="M50,50 Q50,30 60,30 Q70,30 70,40 Q70,50 60,50 Q50,50 50,40 Q50,30 40,30 Q30,30 30,40 Q30,60 50,60 Q70,60 70,40 Q70,20 50,20 Q30,20 30,40 Q30,70 60,70 Q80,70 80,50 Q80,30 60,30" 
-                      fill="none" 
-                      stroke="url(#spiralGradient)" 
-                      stroke-width="2" 
-                      stroke-linecap="round"
-                      opacity="0.8"/>
-                <path d="M50,50 Q60,50 60,40 Q60,35 55,35 Q50,35 50,40 Q50,45 55,45" 
-                      fill="none" 
-                      stroke="url(#spiralGradient)" 
-                      stroke-width="2.5" 
-                      stroke-linecap="round"
-                      opacity="0.9"/>
+                      fill="none" stroke="url(#spiralGradient)" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
             </svg>
         </div>
     </div>
@@ -766,36 +493,32 @@ st.markdown("""
 # -------------------------------
 st.markdown('<div class="data-type-grid">', unsafe_allow_html=True)
 
-# Initialize session state for selected data type
+# Initialize session state
 if 'selected_data_type' not in st.session_state:
     st.session_state.selected_data_type = None
 
-# Create columns for the grid layout
-cols = st.columns(3)
-for idx, (data_type, description) in enumerate(DATA_TYPES.items()):
-    with cols[idx % 3]:
-        # Create button that updates session state
-        if st.button(
-            data_type,
-            key=f"btn_{data_type}",
-            use_container_width=True,
-            type="secondary"
-        ):
+# Create clickable cards
+for data_type, description in DATA_TYPES.items():
+    selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
+    
+    # Use HTML/JavaScript for click detection
+    card_html = f"""
+    <div class="data-type-card {selected_class}" onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', data: '{data_type}'}}, '*')">
+        <div class="card-title">{data_type}</div>
+        <div class="card-description">{description}</div>
+    </div>
+    """
+    
+    # Display card and add button for functionality
+    cols = st.columns([20, 1])
+    with cols[0]:
+        st.markdown(card_html, unsafe_allow_html=True)
+    with cols[1]:
+        if st.button("", key=f"select_{data_type}", help=f"Select {data_type}"):
             st.session_state.selected_data_type = data_type
             st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-# Display selected card info below buttons
-if st.session_state.selected_data_type:
-    st.markdown(f"""
-    <div style="max-width: 1200px; margin: -40px auto 40px auto; padding: 0 20px;">
-        <div class="data-type-card selected">
-            <div class="card-title">{st.session_state.selected_data_type}</div>
-            <div class="card-description">{DATA_TYPES[st.session_state.selected_data_type]}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 
 # Show input section only if a data type is selected
@@ -808,7 +531,6 @@ if st.session_state.selected_data_type:
     st.markdown('<div class="input-section">', unsafe_allow_html=True)
     st.markdown(f'<p class="section-title">Add Your {st.session_state.selected_data_type} Data</p>', unsafe_allow_html=True)
     
-    # Input method selection
     input_mode = st.radio(
         "Choose input method:",
         ("Type or paste text", "Upload a file"),
@@ -828,7 +550,7 @@ if st.session_state.selected_data_type:
             key="text_area_input"
         )
     else:
-        st.markdown('<p style="color: #9ca3af; font-size: 0.875rem; margin-bottom: 12px; font-weight: 300;">Upload your data file</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #9ca3af; font-size: 0.75rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Upload your data file</p>', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Choose a file",
             type=["txt", "pdf", "docx", "doc", "csv", "xlsx"],
@@ -863,8 +585,7 @@ if st.session_state.selected_data_type:
     if not generate_button:
         with visual_container:
             st.info(
-                "Your visualization will appear here once generated. "
-                f"Add your {st.session_state.selected_data_type.lower()} data above to begin."
+                f"Your visualization will appear here once generated. Add your {st.session_state.selected_data_type.lower()} data above to begin."
             )
     else:
         if not text_input and not uploaded_file:
@@ -924,7 +645,7 @@ if st.session_state.selected_data_type:
                                     # 4. Render spec → SVG
                                     svg = render_visual_spec(visual_spec)
 
-                                    # 5. Responsive, centered SVG container with external corners
+                                    # 5. Responsive, centered SVG container with corners
                                     html = f"""
                                     <div style="
                                         border: 1px solid rgba(255, 255, 255, 0.15);
@@ -935,7 +656,6 @@ if st.session_state.selected_data_type:
                                         max-width: 100%;
                                         margin: 0 auto 2rem auto;
                                         overflow: hidden;
-                                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
                                         position: relative;
                                     ">
                                         <div style="position: absolute; top: -4px; left: -4px; width: 8px; height: 8px; background: #E07638;"></div>
