@@ -1,5 +1,3 @@
-# renderer.py
-
 from typing import Dict, Any, List
 import random
 
@@ -14,9 +12,11 @@ def _get_num(value: Any, default: float = 0.0) -> float:
     except (TypeError, ValueError):
         return default
 
-def _jitter(value: float, amount: float = 2.0) -> float:
+
+def _jitter(value: float, amount: float = 1.6) -> float:
     """Small random offset to mimic hand-drawn placement."""
     return value + random.uniform(-amount, amount)
+
 
 def _clamp_y(y: float, height: int) -> float:
     """
@@ -31,6 +31,7 @@ def _clamp_y(y: float, height: int) -> float:
         return content_bottom
     return y
 
+
 def _wobble_path(
     x1: float,
     y1: float,
@@ -43,6 +44,7 @@ def _wobble_path(
     cy = (y1 + y2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
     return f"M{x1},{y1} Q{cx},{cy} {x2},{y2}"
 
+
 def _escape(text: str) -> str:
     """Escape basic XML entities."""
     return (
@@ -53,6 +55,7 @@ def _escape(text: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
+
 
 def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
     """
@@ -123,28 +126,16 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 def render_visual_spec(spec: Dict[str, Any]) -> str:
     """
     Convert a JSON visual specification into an SVG string.
-
-    Expected spec format:
-      {
-        "canvas": {"width": ..., "height": ..., "background": "#..."},
-        "elements": [...],
-        "legend": [...],   # or {"title": "...", "items": [...]}
-        "title": "..."
-      }
-
-    Supported element types: circle, line, polygon, path, text.
-    Any other element type will be safely ignored.
     """
 
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
 
-    # Accept either "background" or "background_color"
     background = (
         canvas.get("background")
         or canvas.get("background_color")
-        or "#F7F3EB"
+        or "#FDFBF7"
     )
 
     elements: List[Dict[str, Any]] = spec.get("elements", []) or []
@@ -153,12 +144,14 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     legend_items: List[Dict[str, Any]]
     legend_title = "Legend"
 
-    # Allow legend as list or as dict {title, items}
+    # Fix for handling legend as list or dict {title, items}
     if isinstance(raw_legend, dict):
         legend_title = raw_legend.get("title", "Legend") or "Legend"
         legend_items = raw_legend.get("items", []) or []
-    else:
+    elif isinstance(raw_legend, list):  # If legend is a list
         legend_items = raw_legend
+    else:
+        legend_items = []
 
     title_text: str = spec.get("title", "") or ""
 
@@ -169,22 +162,22 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
-    # Background paper (dynamic based on mood)
+    # Background paper
     svg_parts.append(
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
-    # Light paper border (slightly more pronounced)
+    # Light paper border
     svg_parts.append(
         f'<rect x="16" y="16" width="{width-32}" height="{height-32}" '
-        f'fill="none" stroke="#E1D7C6" stroke-width="2" />'
+        f'fill="none" stroke="#E1D7C6" stroke-width="1.5" />'
     )
 
-    # Title at top (larger, with slight jitter)
+    # Title at top
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="50" text-anchor="middle" '
-            f'font-family="Georgia, serif" font-size="28" fill="#222">'
+            f'font-family="Georgia, serif" font-size="24" fill="#222">'
             f'{_escape(title_text)}</text>'
         )
 
