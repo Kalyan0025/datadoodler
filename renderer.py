@@ -1,12 +1,9 @@
-# Updated renderer.py with Legend Adjustment, Mood-based Background, and Handwritten Font
-
 from typing import Dict, Any, List
 import random
 
 # Bottom band reserved for legend / "how to read"
 LEGEND_RESERVED_HEIGHT = 140
 CONTENT_TOP_MARGIN = 90  # minimum y for main drawing
-
 
 def _get_num(value: Any, default: float = 0.0) -> float:
     """Safely convert a value to float."""
@@ -16,322 +13,100 @@ def _get_num(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _jitter(value: float, amount: float = 1.6) -> float:
 def _jitter(value: float, amount: float = 2.0) -> float:
-    """Add a small random offset to mimic hand-drawn placement."""
+    """Small random offset to mimic hand-drawn placement."""
     return value + random.uniform(-amount, amount)
 
-
-def _clamp_y(y: float, height: int) -> float:
-    """Ensure y value stays within the visual content boundaries."""
-    content_bottom = height - LEGEND_RESERVED_HEIGHT - 20
-    if y < CONTENT_TOP_MARGIN:
-        return CONTENT_TOP_MARGIN
-    if y > content_bottom:
-        return content_bottom
-    return y
-
-
-def _wobble_path(x1: float, y1: float, x2: float, y2: float, wobble_strength: float = 3.0) -> str:
-    """Slightly imperfect SVG quadratic path between two points for hand-drawn feel."""
+@@ -37,7 +37,7 @@
+    y1: float,
+    x2: float,
+    y2: float,
+    wobble_strength: float = 3.0,
+    wobble_strength: float = 4.0,
+) -> str:
+    """Slightly imperfect SVG quadratic path between two points."""
     cx = (x1 + x2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
-    cy = (y1 + y2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
-    return f"M{x1},{y1} Q{cx},{cy} {x2},{y2}"
-
-
-def _escape(text: str) -> str:
-    """Escape basic XML entities for SVG compatibility."""
-    return (
-        (text or "")
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&apos;")
-    )
-
-
-def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
-    """Compute the bounding box for all drawing elements."""
-    min_x = None
-    max_x = None
-    min_y = None
-    max_y = None
-
-    for el in elements:
-        el_type = (el.get("type") or "").lower()
-
-        if el_type == "circle":
-            x = _get_num(el.get("x"), width / 2)
-            y = _get_num(el.get("y"), height / 2)
-            r = _get_num(el.get("radius"), 0)
-            xs = [x - r, x + r]
-            ys = [y - r, y + r]
-
-        elif el_type == "line":
-            x1 = _get_num(el.get("x"), width / 2)
-            y1 = _get_num(el.get("y"), height / 2)
-            x2 = _get_num(el.get("x2"), x1 + 10)
-            y2 = _get_num(el.get("y2"), y1)
-            xs = [x1, x2]
-            ys = [y1, y2]
-
-        elif el_type == "polygon":
-            pts = el.get("points") or []
-            xs, ys = [], []
-            for p in pts:
-                if isinstance(p, (list, tuple)) and len(p) >= 2:
-                    xs.append(_get_num(p[0]))
-                    ys.append(_get_num(p[1]))
-            if not xs or not ys:
-                continue
-
-        elif el_type == "text":
-            x = _get_num(el.get("x"), width / 2)
-            y = _get_num(el.get("y"), height / 2)
-            xs = [x]
-            ys = [y]
-
-        else:
-            continue
-
-        local_min_x = min(xs)
-        local_max_x = max(xs)
-        local_min_y = min(ys)
-        local_max_y = max(ys)
-
-        if min_x is None or local_min_x < min_x:
-            min_x = local_min_x
-        if max_x is None or local_max_x > max_x:
-            max_x = local_max_x
-        if min_y is None or local_min_y < min_y:
-            min_y = local_min_y
-        if max_y is None or local_max_y > max_y:
-            max_y = local_max_y
-
-    return min_x, min_y, max_x, max_y
-
-
-def render_visual_spec(spec: Dict[str, Any]) -> str:
-    """Generate the SVG based on visual spec with enhanced aesthetics, including mood-based background, handwritten font, and responsive legend."""
-
-    canvas = spec.get("canvas", {}) or {}
-    width = int(canvas.get("width", 1200))
-    height = int(canvas.get("height", 800))
-
-    # Determining background color based on mood or data
-    background_color = canvas.get("background_color", "#F7F3EB")
-    mood = spec.get("mood", "neutral")  # mood could be "positive", "negative", or "neutral"
-    
-    if mood == "positive":
-        background_color = "#FFFAF0"  # Light warm tone for positive mood
-    elif mood == "negative":
-        background_color = "#D8E3E7"  # Cooler tone for negative mood
-
-    elements: List[Dict[str, Any]] = spec.get("elements", []) or []
-    legend_items: List[Dict[str, Any]] = spec.get("legend", []) or []
-    title_text: str = spec.get("title", "") or ""
-
-    svg_parts: List[str] = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="0 0 {width} {height}" '
-        f'preserveAspectRatio="xMidYMid meet" '
+@@ -162,10 +162,16 @@
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
-    # Background Paper
+    # Background paper
     svg_parts.append(
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background_color}" />'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
-
-    # Title
-    if title_text:
+    # Background paper, change based on mood
+    if "background" in spec and spec["background"] == "mood":
+        mood_color = "#F0E68C"  # Example: change based on mood data
         svg_parts.append(
-            f'<text x="{width / 2}" y="60" text-anchor="middle" '
-            f'font-family="Dancing Script, cursive" font-size="28" fill="#222">'
-            f'{_escape(title_text)}</text>'
+            f'<rect x="0" y="0" width="{width}" height="{height}" fill="{mood_color}" />'
+        )
+    else:
+        svg_parts.append(
+            f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
         )
 
-    # Content area geometry
-    content_bottom = height - LEGEND_RESERVED_HEIGHT - 20
-    margin_left_right = width * 0.1
-    margin_top = CONTENT_TOP_MARGIN + 10
-    margin_bottom = content_bottom - 10
+    # Light paper border
+    svg_parts.append(
+@@ -246,7 +252,7 @@
+        if not stroke:
+            stroke = "#222222"
 
-    # Bounding box calculation for elements to ensure proper scaling
-    min_x, min_y, max_x, max_y = _compute_bbox(elements, width, height)
-
-    if (
-        min_x is not None
-        and max_x is not None
-        and min_y is not None
-        and max_y is not None
-        and max_x > min_x
-        and max_y > min_y
-    ):
-        orig_cx = (min_x + max_x) / 2.0
-        orig_cy = (min_y + max_y) / 2.0
-
-        avail_w = (width - 2 * margin_left_right)
-        avail_h = (margin_bottom - margin_top)
-
-        sx = avail_w / (max_x - min_x)
-        sy = avail_h / (max_y - min_y)
-        scale = min(sx, sy) * 0.9  # breathing room
-
-        target_cx = width / 2.0
-        target_cy = (margin_top + margin_bottom) / 2.0
-
-        def tx(x: float) -> float:
-            return target_cx + (x - orig_cx) * scale
-
-        def ty(y: float) -> float:
-            return target_cy + (y - orig_cy) * scale
-
-    else:
-        scale = 1.0
-
-        def tx(x: float) -> float:
-            return x
-
-        def ty(y: float) -> float:
-            return y
-
-    # Draw elements with hand-drawn, jittered effect
-    for el in elements:
-        el_type = (el.get("type") or "").lower()
-        fill = el.get("fill", "none")
-        stroke = el.get("stroke", "#222222")
-        stroke_width = _get_num(el.get("strokeWidth"), 2.5)
-        opacity = _get_num(el.get("opacity"), 0.85)
+        stroke_width = _get_num(el.get("strokeWidth"), 2.0)
+        stroke_width = _get_num(el.get("strokeWidth"), 2.5)  # Slightly thicker strokes
+        opacity = _get_num(el.get("opacity"), random.uniform(0.86, 1.0))
 
         if el_type == "circle":
-            cx_raw = _get_num(el.get("x"), width / 2)
-            cy_raw = _get_num(el.get("y"), height / 2)
-            r_raw = _get_num(el.get("radius"), 8)
-
+@@ -257,9 +263,9 @@
             cx_scaled = tx(cx_raw)
             cy_scaled = ty(cy_raw)
 
-            cx = _jitter(cx_scaled, amount=2.5)
-            cy = _clamp_y(_jitter(cy_scaled, amount=2.5), height)
-            r = max(_jitter(r_raw * scale, amount=2.0), 1.0)
+            cx = _jitter(cx_scaled, amount=2.3)
+            cy = _clamp_y(_jitter(cy_scaled, amount=2.3), height)
+            r = max(_jitter(r_raw * scale, amount=1.0), 0.8)
+            cx = _jitter(cx_scaled, amount=3.0)
+            cy = _clamp_y(_jitter(cy_scaled, amount=3.0), height)
+            r = max(_jitter(r_raw * scale, amount=2.0), 0.8)
 
             svg_parts.append(
                 f'<circle cx="{cx}" cy="{cy}" r="{r}" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" '
-                f'opacity="{opacity}" />'
-            )
-
-        elif el_type == "line":
-            x1_raw = _get_num(el.get("x"), width / 2)
-            y1_raw = _get_num(el.get("y"), height / 2)
-            x2_raw = _get_num(el.get("x2"), x1_raw + 10)
-            y2_raw = _get_num(el.get("y2"), y1_raw)
-
-            x1_scaled = tx(x1_raw)
-            y1_scaled = ty(y1_raw)
+@@ -278,12 +284,12 @@
             x2_scaled = tx(x2_raw)
             y2_scaled = ty(y2_raw)
 
-            x1 = _jitter(x1_scaled, amount=2.5)
-            y1 = _clamp_y(_jitter(y1_scaled, amount=2.5), height)
-            x2 = _jitter(x2_scaled, amount=2.5)
-            y2 = _clamp_y(_jitter(y2_scaled, amount=2.5), height)
+            x1 = _jitter(x1_scaled, amount=2.0)
+            y1 = _clamp_y(_jitter(y1_scaled, amount=2.0), height)
+            x2 = _jitter(x2_scaled, amount=2.0)
+            y2 = _clamp_y(_jitter(y2_scaled, amount=2.0), height)
+            x1 = _jitter(x1_scaled, amount=3.0)
+            y1 = _clamp_y(_jitter(y1_scaled, amount=3.0), height)
+            x2 = _jitter(x2_scaled, amount=3.0)
+            y2 = _clamp_y(_jitter(y2_scaled, amount=3.0), height)
 
+            d = _wobble_path(x1, y1, x2, y2, wobble_strength=3.0)
             d = _wobble_path(x1, y1, x2, y2, wobble_strength=4.0)
 
             svg_parts.append(
                 f'<path d="{d}" fill="none" '
-                f'stroke="{stroke}" stroke-width="{stroke_width}" '
-                f'opacity="{opacity}" />'
-            )
-
-        elif el_type == "polygon":
-            pts = el.get("points") or []
-            jittered_points = [
-                f"{tx(_get_num(p[0]))},{_clamp_y(tx(_get_num(p[1])), height)}"
-                for p in pts
-            ]
-            if jittered_points:
-                pts_str = " ".join(jittered_points)
-                svg_parts.append(
-                    f'<polygon points="{pts_str}" fill="{fill}" '
-                    f'stroke="{stroke}" stroke-width="{stroke_width}" '
-                    f'opacity="{opacity}" />'
-                )
-
-        elif el_type == "text":
-            tx_raw = _get_num(el.get("x"), width / 2)
-            ty_raw = _get_num(el.get("y"), height / 2)
-
+@@ -301,8 +307,8 @@
+                        py_raw = _get_num(p[1])
+                        px_scaled = tx(px_raw)
+                        py_scaled = ty(py_raw)
+                        px = _jitter(px_scaled, amount=1.8)
+                        py = _clamp_y(_jitter(py_scaled, amount=1.8), height)
+                        px = _jitter(px_scaled, amount=2.0)
+                        py = _clamp_y(_jitter(py_scaled, amount=2.0), height)
+                        jittered_points.append(f"{px},{py}")
+                if jittered_points:
+                    pts_str = " ".join(jittered_points)
+@@ -329,8 +335,8 @@
             tx_scaled_val = tx(tx_raw)
             ty_scaled_val = ty(ty_raw)
 
+            tx_final = _jitter(tx_scaled_val, amount=1.2)
+            ty_final = _clamp_y(_jitter(ty_scaled_val, amount=1.2), height)
             tx_final = _jitter(tx_scaled_val, amount=2.0)
             ty_final = _clamp_y(_jitter(ty_scaled_val, amount=2.0), height)
 
             content = _escape(el.get("text") or "")
             font_size = _get_num(el.get("fontSize"), 14)
-            fill_text = el.get("fill", "#333333")
-            anchor = el.get("textAnchor", "start")
-
-            svg_parts.append(
-                f'<text x="{tx_final}" y="{ty_final}" text-anchor="{anchor}" '
-                f'font-family="Dancing Script, cursive" font-size="{font_size}" '
-                f'fill="{fill_text}" opacity="{opacity}">{content}</text>'
-            )
-
-    # Legend at the bottom
-    if legend_items:
-        legend_top = height - LEGEND_RESERVED_HEIGHT + 30
-        legend_left = 70
-        line_height = 24
-
-        svg_parts.append(
-            f'<text x="{legend_left}" y="{legend_top - 10}" '
-            f'font-family="Georgia, serif" font-size="18" '
-            f'fill="#222">{_escape("Legend")}</text>'
-        )
-
-        # Horizontal Legend Placement for large datasets
-        if len(legend_items) > 6:
-            row_count = (len(legend_items) // 4) + 1
-            row_y_offset = legend_top + 30
-            for i, item in enumerate(legend_items):
-                if isinstance(item, dict):
-                    row_num = i // 4
-                    column_num = i % 4
-                    color = item.get("color", "#222222")
-                    label = _escape(item.get("label", ""))
-
-                    x_pos = legend_left + (column_num * 150)
-                    y_pos = row_y_offset + (row_num * line_height)
-
-                    svg_parts.append(
-                        f'<circle cx="{x_pos}" cy="{y_pos}" r="5" '
-                        f'fill="{color}" stroke="#222" stroke-width="0.7" />'
-                    )
-                    svg_parts.append(
-                        f'<text x="{x_pos + 18}" y="{y_pos + 4}" '
-                        f'font-family="Georgia, serif" font-size="13" '
-                        f'fill="#222">{label}</text>'
-                    )
-        else:
-            for idx, item in enumerate(legend_items):
-                if isinstance(item, dict):
-                    ly = legend_top + idx * line_height
-                    color = item.get("color", "#222222")
-                    label = _escape(item.get("label", ""))
-
-                    svg_parts.append(
-                        f'<circle cx="{legend_left}" cy="{ly}" r="5" '
-                        f'fill="{color}" stroke="#222" stroke-width="0.7" />'
-                    )
-                    svg_parts.append(
-                        f'<text x="{legend_left + 18}" y="{ly + 4}" '
-                        f'font-family="Georgia, serif" font-size="13" '
-                        f'fill="#222">{label}</text>'
-                    )
-
-    svg_parts.append("</svg>")
-    return "".join(svg_parts)
