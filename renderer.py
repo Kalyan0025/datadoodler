@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 import random
 
-LEGEND_RESERVED_HEIGHT = 160
+LEGEND_RESERVED_HEIGHT = 140
 CONTENT_TOP_MARGIN = 90  
 
 def _get_num(value: Any, default: float = 0.0) -> float:
@@ -41,113 +41,77 @@ def _escape(text: str) -> str:
         .replace("'", "&apos;")
     )
 
-def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
-    """Compute the bounding box for all drawing elements."""
-    min_x = None
-    max_x = None
-    min_y = None
-    max_y = None
-
-    for el in elements:
-        el_type = (el.get("type") or "").lower()
-
-        if el_type == "circle":
-            x = _get_num(el.get("x"), width / 2)
-            y = _get_num(el.get("y"), height / 2)
-            r = _get_num(el.get("radius"), 0)
-            xs = [x - r, x + r]
-            ys = [y - r, y + r]
-
-        elif el_type == "line":
-            x1 = _get_num(el.get("x"), width / 2)
-            y1 = _get_num(el.get("y"), height / 2)
-            x2 = _get_num(el.get("x2"), x1 + 10)
-            y2 = _get_num(el.get("y2"), y1)
-            xs = [x1, x2]
-            ys = [y1, y2]
-
-        elif el_type == "polygon":
-            pts = el.get("points") or []
-            xs, ys = [], []
-            for p in pts:
-                if isinstance(p, (list, tuple)) and len(p) >= 2:
-                    xs.append(_get_num(p[0]))
-                    ys.append(_get_num(p[1]))
-            if not xs or not ys:
-                continue
-
-        elif el_type == "text":
-            x = _get_num(el.get("x"), width / 2)
-            y = _get_num(el.get("y"), height / 2)
-            xs = [x]
-            ys = [y]
-
-        else:
-            continue
-
-        local_min_x = min(xs)
-        local_max_x = max(xs)
-        local_min_y = min(ys)
-        local_max_y = max(ys)
-
-        if min_x is None or local_min_x < min_x:
-            min_x = local_min_x
-        if max_x is None or local_max_x > max_x:
-            max_x = local_max_x
-        if min_y is None or local_min_y < min_y:
-            min_y = local_min_y
-        if max_y is None or local_max_y > max_y:
-            max_y = local_max_y
-
-    return min_x, min_y, max_x, max_y
-
 def render_visual_spec(spec: Dict[str, Any]) -> str:
     """Generate the SVG based on visual spec with enhanced aesthetics, including mood-based background, handwritten font, and responsive legend."""
-    canvas = spec.get("canvas", {}) or {}
-    width = int(canvas.get("width", 1200))
-    height = int(canvas.get("height", 800))
+    canvas_width = 1200
+    canvas_height = 800
 
-    background_color = canvas.get("background_color", "#F7F3EB")
-    mood = spec.get("mood", "neutral")  # mood could be "positive", "negative", or "neutral"
-    
-    if mood == "positive":
-        background_color = "#FFFAF0"  # Light warm tone for positive mood
-    elif mood == "negative":
-        background_color = "#D8E3E7"  # Cooler tone for negative mood
+    # Background colors for different moods
+    mood_colors = {
+        "Positive": "#FFEB3B",  # Yellow for happy
+        "Neutral": "#F3F4F7",  # Light gray for neutral
+        "Negative": "#B3B3B3"  # Cool gray for negative
+    }
+    background_color = mood_colors.get(spec.get("mood", "Neutral"), "#F3F4F7")
 
-    elements: List[Dict[str, Any]] = spec.get("elements", []) or []
-    legend_items: List[Dict[str, Any]] = spec.get("legend", []) or []
-    title_text: str = spec.get("title", "") or ""
+    elements: List[Dict[str, Any]] = []
 
+    # Example visual: mood represented as color
+    elements.append({
+        "type": "circle",
+        "x": canvas_width / 2,
+        "y": canvas_height / 2,
+        "radius": spec.get("hours_worked", 8) * 5,  # Adjust circle size based on hours worked
+        "fill": background_color
+    })
+
+    # Add energy level as text
+    elements.append({
+        "type": "text",
+        "x": canvas_width / 2,
+        "y": canvas_height / 2 + 50,
+        "text": f"Energy: {spec.get('energy', 'Medium')}",
+        "fontSize": 24,
+        "fill": "#333333"
+    })
+
+    # Generate SVG for elements
     svg_parts: List[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="0 0 {width} {height}" '
+        f'viewBox="0 0 {canvas_width} {canvas_height}" '
         f'preserveAspectRatio="xMidYMid meet" '
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
     # Background Paper
     svg_parts.append(
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background_color}" />'
+        f'<rect x="0" y="0" width="{canvas_width}" height="{canvas_height}" fill="{background_color}" />'
     )
 
-    # Title
-    if title_text:
-        svg_parts.append(
-            f'<text x="{width / 2}" y="60" text-anchor="middle" '
-            f'font-family="Dancing Script, cursive" font-size="28" fill="#222">'
-            f'{_escape(title_text)}</text>'
-        )
-
-    # Visual Element Handling (e.g., circles, lines, polygons, etc.)
+    # Render each visual element
     for el in elements:
-        # SVG element creation logic remains here as per the previous implementation
-        pass
+        el_type = (el.get("type") or "").lower()
 
-    # Legend handling for shapes
-    if legend_items:
-        # Legend layout and shapes (circle, triangle, swirl, etc.)
-        pass
+        if el_type == "circle":
+            cx = _get_num(el.get("x"), canvas_width / 2)
+            cy = _get_num(el.get("y"), canvas_height / 2)
+            r = _get_num(el.get("radius"), 50)
+            fill = el.get("fill", "none")
+            svg_parts.append(
+                f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" />'
+            )
+
+        elif el_type == "text":
+            tx = _get_num(el.get("x"), canvas_width / 2)
+            ty = _get_num(el.get("y"), canvas_height / 2)
+            content = _escape(el.get("text") or "")
+            font_size = _get_num(el.get("fontSize"), 14)
+            fill_text = el.get("fill", "#333333")
+            svg_parts.append(
+                f'<text x="{tx}" y="{ty}" font-family="Dancing Script, cursive" font-size="{font_size}" '
+                f'fill="{fill_text}">{content}</text>'
+            )
 
     svg_parts.append("</svg>")
+
     return "".join(svg_parts)
