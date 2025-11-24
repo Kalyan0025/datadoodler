@@ -26,9 +26,11 @@ st.set_page_config(
 # -------------------------------
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
     /* Global styles */
     * {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
     /* Hide Streamlit branding */
@@ -48,7 +50,7 @@ st.markdown("""
     /* Hero section */
     .hero-section {
         text-align: center;
-        padding: 60px 20px 40px 20px;
+        padding: 40px 20px 25px 20px;
         max-width: 1200px;
         margin: 0 auto;
         position: relative;
@@ -61,14 +63,17 @@ st.markdown("""
         margin-bottom: 1rem;
         line-height: 1.2;
         letter-spacing: -0.02em;
+        position: relative;
+        display: inline-block;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
     }
     
     .spiral-container {
         position: absolute;
-        top: 20px;
+        top: -30px;
         right: -60px;
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
         opacity: 0.6;
     }
     
@@ -79,23 +84,27 @@ st.markdown("""
     }
     
     @keyframes spiral-rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
     
     .hero-subtitle {
         font-size: 1.15rem;
         color: #9ca3af;
         max-width: 800px;
-        margin: 0 auto 2.5rem auto;
-        line-height: 1.6;
+        margin: 0 auto 2rem auto;
+        line-height: 1.5;
         font-weight: 300;
     }
     
-    /* Data type grid */
+    /* Data type selection grid */
     .data-type-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
         max-width: 1200px;
         margin: 0 auto 50px auto;
@@ -108,27 +117,39 @@ st.markdown("""
         border-radius: 0;
         padding: 36px 24px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+        overflow: visible;
     }
     
-    .data-type-card::before,
-    .data-type-card::after {
+    /* External corner points */
+    .data-type-card::before {
         content: '';
         position: absolute;
+        top: -4px;
+        left: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
         transition: all 0.3s ease;
     }
     
-    .data-type-card::before { top: -4px; left: -4px; }
-    .data-type-card::after { top: -4px; right: -4px; }
+    .data-type-card::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        transition: all 0.3s ease;
+    }
     
     .data-type-card:hover {
         border-color: #E07638;
         border-width: 2px;
         transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(224, 118, 56, 0.15);
         background: rgba(224, 118, 56, 0.05);
     }
     
@@ -143,6 +164,7 @@ st.markdown("""
         border-color: #E07638;
         border-width: 2px;
         background: rgba(224, 118, 56, 0.08);
+        box-shadow: 0 4px 16px rgba(224, 118, 56, 0.2);
     }
     
     .data-type-card.selected::before,
@@ -156,8 +178,9 @@ st.markdown("""
         font-size: 1.3rem;
         font-weight: 400;
         color: #e5e7eb;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
         letter-spacing: -0.01em;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
     }
     
     .card-description {
@@ -167,31 +190,37 @@ st.markdown("""
         font-weight: 300;
     }
     
+    /* Hide Streamlit buttons */
+    .stButton button {
+        display: none !important;
+    }
+    
     /* Input section */
     .input-section {
         max-width: 900px;
-        margin: 40px auto;
+        margin: 0 auto 50px auto;
         padding: 0 20px;
     }
     
     .section-title {
         font-size: 0.75rem;
+        font-weight: 500;
         color: #9ca3af;
         margin-bottom: 16px;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        font-weight: 500;
     }
     
-    /* Streamlit component styling */
+    /* Streamlit overrides */
     .stTextArea {
         position: relative !important;
     }
     
-    .stTextArea::before,
-    .stTextArea::after {
+    .stTextArea::before {
         content: '';
         position: absolute;
+        top: -4px;
+        left: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -200,21 +229,34 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    .stTextArea::before { top: -4px; left: -4px; }
-    .stTextArea::after { top: -4px; right: -4px; }
+    .stTextArea::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
     
     .stTextArea:focus-within::before,
-    .stTextArea:focus-within::after {
+    .stTextArea:focus-within::after,
+    .stTextArea:hover::before,
+    .stTextArea:hover::after {
         background: #E07638;
         width: 8px;
         height: 8px;
     }
     
     .stTextArea textarea {
-        background: rgba(40, 40, 40, 0.3) !important;
+        background-color: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-size: 0.95rem !important;
         font-weight: 300 !important;
         transition: all 0.3s ease !important;
@@ -224,17 +266,24 @@ st.markdown("""
         border-color: #E07638 !important;
         border-width: 2px !important;
         box-shadow: none !important;
-        background: rgba(224, 118, 56, 0.05) !important;
+        background-color: rgba(224, 118, 56, 0.05) !important;
+    }
+    
+    .stTextArea textarea:hover {
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        background-color: rgba(224, 118, 56, 0.05) !important;
     }
     
     .stTextInput {
         position: relative !important;
     }
     
-    .stTextInput::before,
-    .stTextInput::after {
+    .stTextInput::before {
         content: '';
         position: absolute;
+        top: -4px;
+        left: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -243,18 +292,30 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    .stTextInput::before { top: -4px; left: -4px; }
-    .stTextInput::after { top: -4px; right: -4px; }
+    .stTextInput::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
     
     .stTextInput:focus-within::before,
-    .stTextInput:focus-within::after {
+    .stTextInput:focus-within::after,
+    .stTextInput:hover::before,
+    .stTextInput:hover::after {
         background: #E07638;
         width: 8px;
         height: 8px;
     }
     
     .stTextInput input {
-        background: rgba(40, 40, 40, 0.3) !important;
+        background-color: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         color: #e5e7eb !important;
@@ -266,7 +327,104 @@ st.markdown("""
         border-color: #E07638 !important;
         border-width: 2px !important;
         box-shadow: none !important;
-        background: rgba(224, 118, 56, 0.05) !important;
+        background-color: rgba(224, 118, 56, 0.05) !important;
+    }
+    
+    .stTextInput input:hover {
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        background-color: rgba(224, 118, 56, 0.05) !important;
+    }
+    
+    /* Generate Button - show only this one */
+    div[data-testid="column"]:nth-child(2) .stButton button {
+        display: block !important;
+        background: rgba(40, 40, 40, 0.3) !important;
+        color: #e5e7eb !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 0 !important;
+        padding: 14px 40px !important;
+        font-weight: 400 !important;
+        font-size: 1rem !important;
+        letter-spacing: 0.01em !important;
+        transition: all 0.3s ease !important;
+        position: relative !important;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton button:hover {
+        background: rgba(224, 118, 56, 0.08) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #E07638 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(224, 118, 56, 0.2) !important;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton {
+        position: relative !important;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton:hover::before,
+    div[data-testid="column"]:nth-child(2) .stButton:hover::after {
+        background: #E07638;
+        width: 8px;
+        height: 8px;
+    }
+    
+    /* Canvas section */
+    .canvas-section {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .canvas-title {
+        font-size: 1.5rem;
+        font-weight: 300;
+        color: #e5e7eb;
+        margin-bottom: 24px;
+        text-align: center;
+        letter-spacing: -0.01em;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .canvas-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    .canvas-container svg {
+        width: 100%;
+        height: auto;
+        display: block;
     }
     
     /* Radio buttons */
@@ -282,7 +440,43 @@ st.markdown("""
     .stRadio [role="radiogroup"] {
         gap: 12px !important;
         margin-bottom: 20px !important;
-        display: flex !important;
+    }
+    
+    .stRadio [role="radiogroup"] > div {
+        position: relative !important;
+    }
+    
+    .stRadio [role="radiogroup"] > div::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio [role="radiogroup"] > div::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio [role="radiogroup"] > div:hover::before,
+    .stRadio [role="radiogroup"] > div:hover::after {
+        background: #E07638;
+        width: 8px;
+        height: 8px;
     }
     
     .stRadio [role="radiogroup"] label {
@@ -304,16 +498,21 @@ st.markdown("""
         color: #e5e7eb !important;
     }
     
-    /* File uploader */
+    .stRadio [role="radiogroup"] label div {
+        color: inherit !important;
+    }
+    
+    /* File uploader styling */
     .stFileUploader {
         margin-bottom: 20px;
         position: relative !important;
     }
     
-    .stFileUploader::before,
-    .stFileUploader::after {
+    .stFileUploader::before {
         content: '';
         position: absolute;
+        top: -4px;
+        left: -4px;
         width: 6px;
         height: 6px;
         background: rgba(224, 118, 56, 0.5);
@@ -322,8 +521,18 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    .stFileUploader::before { top: -4px; left: -4px; }
-    .stFileUploader::after { top: -4px; right: -4px; }
+    .stFileUploader::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 6px;
+        height: 6px;
+        background: rgba(224, 118, 56, 0.5);
+        z-index: 10;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
     
     .stFileUploader:hover::before,
     .stFileUploader:hover::after {
@@ -333,10 +542,11 @@ st.markdown("""
     }
     
     .stFileUploader section {
-        background: rgba(40, 40, 40, 0.3) !important;
+        background-color: rgba(40, 40, 40, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         padding: 24px !important;
+        transition: all 0.3s ease !important;
     }
     
     .stFileUploader section:hover {
@@ -348,6 +558,7 @@ st.markdown("""
     .stFileUploader label {
         color: #9ca3af !important;
         font-weight: 300 !important;
+        font-size: 0.875rem !important;
     }
     
     .stFileUploader button {
@@ -364,54 +575,21 @@ st.markdown("""
         color: #E07638 !important;
     }
     
-    /* Success/Info messages */
+    /* Success messages */
     .stSuccess {
         background: rgba(224, 118, 56, 0.1) !important;
         border: 1px solid rgba(224, 118, 56, 0.3) !important;
         border-radius: 0 !important;
         color: #E07638 !important;
-        padding: 12px !important;
+        font-weight: 400 !important;
     }
     
+    /* Info messages */
     .stInfo {
-        background: rgba(100, 100, 100, 0.2) !important;
+        background: rgba(100, 100, 100, 0.15) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 0 !important;
         color: #9ca3af !important;
-    }
-    
-    /* Button */
-    .stButton button {
-        background: rgba(40, 40, 40, 0.3) !important;
-        color: #e5e7eb !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 0 !important;
-        padding: 12px 32px !important;
-        font-weight: 400 !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    .stButton button:hover {
-        background: rgba(224, 118, 56, 0.08) !important;
-        border-color: #E07638 !important;
-        border-width: 2px !important;
-        color: #E07638 !important;
-    }
-    
-    /* Canvas section */
-    .canvas-section {
-        max-width: 1400px;
-        margin: 50px auto;
-        padding: 0 20px;
-    }
-    
-    .canvas-title {
-        font-size: 1.5rem;
-        font-weight: 300;
-        color: #e5e7eb;
-        margin-bottom: 24px;
-        text-align: center;
-        letter-spacing: -0.01em;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -468,15 +646,25 @@ st.markdown("""
     <div style="position: relative; display: inline-block;">
         <h1 class="hero-title">Data Doodler</h1>
         <div class="spiral-container">
-            <svg class="spiral" viewBox="0 0 100 100">
+            <svg class="spiral" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="spiralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#E07638" />
-                        <stop offset="100%" style="stop-color:#ff8c42" />
+                        <stop offset="0%" style="stop-color:#E07638;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff8c42;stop-opacity:1" />
                     </linearGradient>
                 </defs>
                 <path d="M50,50 Q50,30 60,30 Q70,30 70,40 Q70,50 60,50 Q50,50 50,40 Q50,30 40,30 Q30,30 30,40 Q30,60 50,60 Q70,60 70,40 Q70,20 50,20 Q30,20 30,40 Q30,70 60,70 Q80,70 80,50 Q80,30 60,30" 
-                      fill="none" stroke="url(#spiralGradient)" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                      fill="none" 
+                      stroke="url(#spiralGradient)" 
+                      stroke-width="2" 
+                      stroke-linecap="round"
+                      opacity="0.8"/>
+                <path d="M50,50 Q60,50 60,40 Q60,35 55,35 Q50,35 50,40 Q50,45 55,45" 
+                      fill="none" 
+                      stroke="url(#spiralGradient)" 
+                      stroke-width="2.5" 
+                      stroke-linecap="round"
+                      opacity="0.9"/>
             </svg>
         </div>
     </div>
@@ -493,30 +681,31 @@ st.markdown("""
 # -------------------------------
 st.markdown('<div class="data-type-grid">', unsafe_allow_html=True)
 
-# Initialize session state
+# Initialize session state for selected data type
 if 'selected_data_type' not in st.session_state:
     st.session_state.selected_data_type = None
 
-# Create clickable cards
-for data_type, description in DATA_TYPES.items():
-    selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
-    
-    # Use HTML/JavaScript for click detection
-    card_html = f"""
-    <div class="data-type-card {selected_class}" onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', data: '{data_type}'}}, '*')">
-        <div class="card-title">{data_type}</div>
-        <div class="card-description">{description}</div>
-    </div>
-    """
-    
-    # Display card and add button for functionality
-    cols = st.columns([20, 1])
-    with cols[0]:
-        st.markdown(card_html, unsafe_allow_html=True)
-    with cols[1]:
-        if st.button("", key=f"select_{data_type}", help=f"Select {data_type}"):
+# Create columns for the grid layout
+cols = st.columns(3)
+for idx, (data_type, description) in enumerate(DATA_TYPES.items()):
+    with cols[idx % 3]:
+        selected_class = "selected" if st.session_state.selected_data_type == data_type else ""
+        
+        if st.button(
+            f"{data_type}",
+            key=f"btn_{data_type}",
+            use_container_width=True,
+        ):
             st.session_state.selected_data_type = data_type
             st.rerun()
+        
+        # Display card with description
+        st.markdown(f"""
+        <div class="data-type-card {selected_class}">
+            <div class="card-title">{data_type}</div>
+            <div class="card-description">{description}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -531,6 +720,7 @@ if st.session_state.selected_data_type:
     st.markdown('<div class="input-section">', unsafe_allow_html=True)
     st.markdown(f'<p class="section-title">Add Your {st.session_state.selected_data_type} Data</p>', unsafe_allow_html=True)
     
+    # Input method selection
     input_mode = st.radio(
         "Choose input method:",
         ("Type or paste text", "Upload a file"),
@@ -585,7 +775,8 @@ if st.session_state.selected_data_type:
     if not generate_button:
         with visual_container:
             st.info(
-                f"Your visualization will appear here once generated. Add your {st.session_state.selected_data_type.lower()} data above to begin."
+                "Your visualization will appear here once generated. "
+                f"Add your {st.session_state.selected_data_type.lower()} data above to begin."
             )
     else:
         if not text_input and not uploaded_file:
@@ -645,7 +836,7 @@ if st.session_state.selected_data_type:
                                     # 4. Render spec → SVG
                                     svg = render_visual_spec(visual_spec)
 
-                                    # 5. Responsive, centered SVG container with corners
+                                    # 5. Responsive, centered SVG container with external corners
                                     html = f"""
                                     <div style="
                                         border: 1px solid rgba(255, 255, 255, 0.15);
@@ -656,6 +847,7 @@ if st.session_state.selected_data_type:
                                         max-width: 100%;
                                         margin: 0 auto 2rem auto;
                                         overflow: hidden;
+                                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
                                         position: relative;
                                     ">
                                         <div style="position: absolute; top: -4px; left: -4px; width: 8px; height: 8px; background: #E07638;"></div>
