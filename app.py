@@ -194,14 +194,15 @@ st.markdown("""
     /* Remove button overlay styling */
     .stButton {
         margin-top: 16px !important;
+        position: relative !important;
     }
     
     .stButton button {
-        background: rgba(40, 40, 40, 0.3) !important;
+        background: rgba(224, 118, 56, 0.15) !important;
         color: #e5e7eb !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(224, 118, 56, 0.3) !important;
         border-radius: 0 !important;
-        padding: 10px 24px !important;
+        padding: 12px 24px !important;
         font-weight: 400 !important;
         font-size: 0.9rem !important;
         letter-spacing: 0.01em !important;
@@ -212,11 +213,20 @@ st.markdown("""
     }
     
     .stButton button:hover {
-        background: rgba(224, 118, 56, 0.08) !important;
+        background: rgba(224, 118, 56, 0.25) !important;
         border-color: #E07638 !important;
         border-width: 2px !important;
         color: #E07638 !important;
         transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(224, 118, 56, 0.2) !important;
+    }
+    
+    .stButton button:active,
+    .stButton button:focus {
+        background: rgba(224, 118, 56, 0.2) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #E07638 !important;
     }
     
     /* Add corners to card buttons */
@@ -227,7 +237,7 @@ st.markdown("""
         left: -4px;
         width: 6px;
         height: 6px;
-        background: rgba(224, 118, 56, 0.5);
+        background: rgba(224, 118, 56, 0.6);
         z-index: 10;
         pointer-events: none;
         transition: all 0.3s ease;
@@ -240,7 +250,7 @@ st.markdown("""
         right: -4px;
         width: 6px;
         height: 6px;
-        background: rgba(224, 118, 56, 0.5);
+        background: rgba(224, 118, 56, 0.6);
         z-index: 10;
         pointer-events: none;
         transition: all 0.3s ease;
@@ -248,6 +258,22 @@ st.markdown("""
     
     .stButton:hover::before,
     .stButton:hover::after {
+        background: #E07638;
+        width: 8px;
+        height: 8px;
+    }
+    
+    /* Selected state for button in selected card column */
+    div[data-testid="column"]:has(.data-type-card.selected) .stButton button {
+        background: rgba(224, 118, 56, 0.3) !important;
+        border-color: #E07638 !important;
+        border-width: 2px !important;
+        color: #E07638 !important;
+        box-shadow: 0 4px 12px rgba(224, 118, 56, 0.25) !important;
+    }
+    
+    div[data-testid="column"]:has(.data-type-card.selected) .stButton::before,
+    div[data-testid="column"]:has(.data-type-card.selected) .stButton::after {
         background: #E07638;
         width: 8px;
         height: 8px;
