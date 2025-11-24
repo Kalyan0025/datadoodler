@@ -50,7 +50,7 @@ st.markdown("""
     /* Hero section */
     .hero-section {
         text-align: center;
-        padding: 40px 20px 25px 20px;
+        padding: 0px 20px 25px 20px;
         max-width: 1200px;
         margin: 0 auto;
         position: relative;
@@ -60,7 +60,7 @@ st.markdown("""
         font-size: 3.5rem;
         font-weight: 300;
         color: #e5e7eb;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         line-height: 1.2;
         letter-spacing: -0.02em;
         position: relative;
@@ -93,12 +93,15 @@ st.markdown("""
     }
     
     .hero-subtitle {
-        font-size: 1.15rem;
+        font-size: 1rem;
         color: #9ca3af;
-        max-width: 800px;
+        max-width: 900px;
         margin: 0 auto 2rem auto;
         line-height: 1.5;
-        font-weight: 300;
+        font-weight: 400;
+        font-family: 'Courier New', Courier, monospace;
+        text-align: center;
+        letter-spacing: 0.02em;
     }
     
     /* Data type selection grid */
