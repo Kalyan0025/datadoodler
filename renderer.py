@@ -1,31 +1,39 @@
 from typing import Dict, Any, List
 import random
 
+# Bottom band reserved for legend / "how to read"
 LEGEND_RESERVED_HEIGHT = 160
-CONTENT_TOP_MARGIN = 90  
+CONTENT_TOP_MARGIN = 90  # minimum y for main drawing
 
-BACKGROUND_COLORS = {
-    "calm": "#F7F3EB",  
-    "intense": "#FBEDE4",  
-    "sad": "#F3F5FA"  
-}
+# Update for handwritten font to mimic "Dear Data" style
+HANDWRITTEN_FONT = "Dancing Script, cursive"  # Add Google Font in your HTML to load this font
 
 def _get_num(value: Any, default: float = 0.0) -> float:
+    """Safely convert a value to float."""
     try:
         return float(value)
     except (TypeError, ValueError):
         return default
 
+
 def _jitter(value: float, amount: float = 1.6) -> float:
+    """Small random offset to mimic hand-drawn placement."""
     return value + random.uniform(-amount, amount)
 
+
 def _clamp_y(y: float, height: int) -> float:
+    """
+    Keep y within the main drawing band:
+    from CONTENT_TOP_MARGIN down to height - LEGEND_RESERVED_HEIGHT - 20.
+    This prevents overlap with the bottom legend and avoids objects hugging the edges.
+    """
     content_bottom = height - LEGEND_RESERVED_HEIGHT - 20
     if y < CONTENT_TOP_MARGIN:
         return CONTENT_TOP_MARGIN
     if y > content_bottom:
         return content_bottom
     return y
+
 
 def _wobble_path(
     x1: float,
@@ -34,11 +42,14 @@ def _wobble_path(
     y2: float,
     wobble_strength: float = 3.0,
 ) -> str:
+    """Slightly imperfect SVG quadratic path between two points."""
     cx = (x1 + x2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
     cy = (y1 + y2) / 2.0 + random.uniform(-wobble_strength, wobble_strength)
     return f"M{x1},{y1} Q{cx},{cy} {x2},{y2}"
 
+
 def _escape(text: str) -> str:
+    """Escape basic XML entities."""
     return (
         (text or "")
         .replace("&", "&amp;")
@@ -48,8 +59,17 @@ def _escape(text: str) -> str:
         .replace("'", "&apos;")
     )
 
+
 def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
-    min_x, max_x, min_y, max_y = None, None, None, None
+    """
+    Compute a bounding box of the main drawing elements (not including legend).
+    We use this later to scale and center the entire composition so it uses
+    most of the canvas.
+    """
+    min_x = None
+    max_x = None
+    min_y = None
+    max_y = None
 
     for el in elements:
         el_type = (el.get("type") or "").lower()
@@ -86,6 +106,7 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
             ys = [y]
 
         else:
+            # Skip unsupported types for bbox
             continue
 
         local_min_x = min(xs)
@@ -104,11 +125,28 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 
     return min_x, min_y, max_x, max_y
 
+
 def render_visual_spec(spec: Dict[str, Any]) -> str:
+    """
+    Convert a JSON visual specification into an SVG string.
+
+    Expected spec format:
+      {
+        "canvas": {"width": ..., "height": ..., "background": "#..."},
+        "elements": [...],
+        "legend": [...],   # or {"title": "...", "items": [...]}
+        "title": "..."
+      }
+
+    Supported element types: circle, line, polygon, path, text.
+    Any other element type will be safely ignored.
+    """
+
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
 
+    # Accept either "background" or "background_color"
     background = (
         canvas.get("background")
         or canvas.get("background_color")
@@ -121,6 +159,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     legend_items: List[Dict[str, Any]]
     legend_title = "Legend"
 
+    # Allow legend as list or as dict {title, items}
     if isinstance(raw_legend, dict):
         legend_title = raw_legend.get("title", "Legend") or "Legend"
         legend_items = raw_legend.get("items", []) or []
@@ -136,22 +175,26 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         f'style="max-width:100%; height:auto; display:block; margin:0 auto;">'
     ]
 
+    # Background paper (Mood-based background)
     svg_parts.append(
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
     )
 
+    # Title at top (slightly smaller because system_prompt also uses title inside spec)
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="50" text-anchor="middle" '
-            f'font-family="Dancing Script, cursive" font-size="24" fill="#222">'
+            f'font-family="{HANDWRITTEN_FONT}" font-size="24" fill="#222">'
             f'{_escape(title_text)}</text>'
         )
 
+    # Content band geometry
     content_bottom = height - LEGEND_RESERVED_HEIGHT - 20
     margin_left_right = width * 0.1
     margin_top = CONTENT_TOP_MARGIN + 10
     margin_bottom = content_bottom - 10
 
+    # 1️⃣ Compute bounding box of the drawing, then compute scale + translation
     min_x, min_y, max_x, max_y = _compute_bbox(elements, width, height)
 
     if (
@@ -168,10 +211,9 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         avail_w = (width - 2 * margin_left_right)
         avail_h = (margin_bottom - margin_top)
 
-        sx = avail_w / (max_
         sx = avail_w / (max_x - min_x)
         sy = avail_h / (max_y - min_y)
-        scale = min(sx, sy) * 0.9
+        scale = min(sx, sy) * 0.9  # keep a little breathing room
 
         target_cx = width / 2.0
         target_cy = (margin_top + margin_bottom) / 2.0
@@ -183,6 +225,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             return target_cy + (y - orig_cy) * scale
 
     else:
+        # Fallback: no scaling
         scale = 1.0
 
         def tx(x: float) -> float:
@@ -191,15 +234,18 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         def ty(y: float) -> float:
             return y
 
+    # 2️⃣ Draw core elements, applying scale + hand-drawn jitter
     for el in elements:
         el_type = (el.get("type") or "").lower()
 
         if el_type not in {"circle", "line", "polygon", "path", "text"}:
+            # Ignore any unsupported / semantic types (arc, cluster, etc.)
             continue
 
         fill = el.get("fill", None)
         stroke = el.get("stroke", None)
 
+        # If only fill provided, add a subtle dark stroke for that "marker" look
         if fill and not stroke and fill != "none":
             stroke = "#222222"
         if not fill:
@@ -300,10 +346,11 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
             svg_parts.append(
                 f'<text x="{tx_final}" y="{ty_final}" text-anchor="{anchor}" '
-                f'font-family="Dancing Script, cursive" font-size="{font_size}" '
+                f'font-family="{HANDWRITTEN_FONT}" font-size="{font_size}" '
                 f'fill="{fill_text}" opacity="{opacity}">{content}</text>'
             )
 
+    # 3️⃣ Legend – in reserved bottom band, clean and non-overlapping
     if legend_items:
         legend_top = height - LEGEND_RESERVED_HEIGHT + 30
         legend_left = 70
@@ -311,7 +358,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
         svg_parts.append(
             f'<text x="{legend_left}" y="{legend_top - 10}" '
-            f'font-family="Dancing Script, cursive" font-size="18" '
+            f'font-family="{HANDWRITTEN_FONT}" font-size="18" '
             f'fill="#222">{_escape(legend_title)}</text>'
         )
 
@@ -322,23 +369,23 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             color = item.get("color", "#222222")
             label = _escape(item.get("label", ""))
 
-            shape = item.get("shape", "circle")  # Shape variation
-            if shape == "circle":
-                svg_parts.append(
-                    f'<circle cx="{legend_left}" cy="{ly}" r="5" '
-                    f'fill="{color}" stroke="#222" stroke-width="0.7" />'
-                )
-            elif shape == "triangle":
-                svg_parts.append(
-                    f'<polygon points="{legend_left-5},{ly+7} {legend_left+5},{ly+7} {legend_left},{ly-5}" '
-                    f'fill="{color}" stroke="#222" stroke-width="0.7" />'
-                )
-
+            svg_parts.append(
+                f'<circle cx="{legend_left}" cy="{ly}" r="5" '
+                f'fill="{color}" stroke="#222" stroke-width="0.7" />'
+            )
             svg_parts.append(
                 f'<text x="{legend_left + 18}" y="{ly + 4}" '
-                f'font-family="Dancing Script, cursive" font-size="13" '
+                f'font-family="{HANDWRITTEN_FONT}" font-size="13" '
                 f'fill="#222">{label}</text>'
             )
+
+    # Fallback if nothing drawn
+    if not elements:
+        svg_parts.append(
+            f'<text x="{width / 2}" y="{height / 2}" text-anchor="middle" '
+            f'font-family="{HANDWRITTEN_FONT}" font-size="20" fill="#999">'
+            f'No visual elements generated — check JSON spec.</text>'
+        )
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
