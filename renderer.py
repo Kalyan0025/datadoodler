@@ -1,4 +1,4 @@
-# Updated renderer.py
+# Updated renderer.py with Legend Adjustment, Mood-based Background, and Handwritten Font
 
 from typing import Dict, Any, List
 import random
@@ -112,15 +112,20 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 
 
 def render_visual_spec(spec: Dict[str, Any]) -> str:
-    """Generate the SVG based on visual spec with enhanced aesthetics."""
+    """Generate the SVG based on visual spec with enhanced aesthetics, including mood-based background, handwritten font, and responsive legend."""
 
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
 
-    background = (
-        canvas.get("background") or canvas.get("background_color") or "#FDFBF7"
-    )
+    # Determining background color based on mood or data
+    background_color = canvas.get("background_color", "#F7F3EB")
+    mood = spec.get("mood", "neutral")  # mood could be "positive", "negative", or "neutral"
+    
+    if mood == "positive":
+        background_color = "#FFFAF0"  # Light warm tone for positive mood
+    elif mood == "negative":
+        background_color = "#D8E3E7"  # Cooler tone for negative mood
 
     elements: List[Dict[str, Any]] = spec.get("elements", []) or []
     legend_items: List[Dict[str, Any]] = spec.get("legend", []) or []
@@ -135,14 +140,14 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     # Background Paper
     svg_parts.append(
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background}" />'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{background_color}" />'
     )
 
     # Title
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="60" text-anchor="middle" '
-            f'font-family="Georgia, serif" font-size="24" fill="#222">'
+            f'font-family="Dancing Script, cursive" font-size="28" fill="#222">'
             f'{_escape(title_text)}</text>'
         )
 
@@ -183,7 +188,6 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             return target_cy + (y - orig_cy) * scale
 
     else:
-        # Fallback for no scaling
         scale = 1.0
 
         def tx(x: float) -> float:
@@ -273,7 +277,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
             svg_parts.append(
                 f'<text x="{tx_final}" y="{ty_final}" text-anchor="{anchor}" '
-                f'font-family="Georgia, serif" font-size="{font_size}" '
+                f'font-family="Dancing Script, cursive" font-size="{font_size}" '
                 f'fill="{fill_text}" opacity="{opacity}">{content}</text>'
             )
 
@@ -289,22 +293,45 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
             f'fill="#222">{_escape("Legend")}</text>'
         )
 
-        for idx, item in enumerate(legend_items):
-            if not isinstance(item, dict):
-                continue
-            ly = legend_top + idx * line_height
-            color = item.get("color", "#222222")
-            label = _escape(item.get("label", ""))
+        # Horizontal Legend Placement for large datasets
+        if len(legend_items) > 6:
+            row_count = (len(legend_items) // 4) + 1
+            row_y_offset = legend_top + 30
+            for i, item in enumerate(legend_items):
+                if isinstance(item, dict):
+                    row_num = i // 4
+                    column_num = i % 4
+                    color = item.get("color", "#222222")
+                    label = _escape(item.get("label", ""))
 
-            svg_parts.append(
-                f'<circle cx="{legend_left}" cy="{ly}" r="5" '
-                f'fill="{color}" stroke="#222" stroke-width="0.7" />'
-            )
-            svg_parts.append(
-                f'<text x="{legend_left + 18}" y="{ly + 4}" '
-                f'font-family="Georgia, serif" font-size="13" '
-                f'fill="#222">{label}</text>'
-            )
+                    x_pos = legend_left + (column_num * 150)
+                    y_pos = row_y_offset + (row_num * line_height)
+
+                    svg_parts.append(
+                        f'<circle cx="{x_pos}" cy="{y_pos}" r="5" '
+                        f'fill="{color}" stroke="#222" stroke-width="0.7" />'
+                    )
+                    svg_parts.append(
+                        f'<text x="{x_pos + 18}" y="{y_pos + 4}" '
+                        f'font-family="Georgia, serif" font-size="13" '
+                        f'fill="#222">{label}</text>'
+                    )
+        else:
+            for idx, item in enumerate(legend_items):
+                if isinstance(item, dict):
+                    ly = legend_top + idx * line_height
+                    color = item.get("color", "#222222")
+                    label = _escape(item.get("label", ""))
+
+                    svg_parts.append(
+                        f'<circle cx="{legend_left}" cy="{ly}" r="5" '
+                        f'fill="{color}" stroke="#222" stroke-width="0.7" />'
+                    )
+                    svg_parts.append(
+                        f'<text x="{legend_left + 18}" y="{ly + 4}" '
+                        f'font-family="Georgia, serif" font-size="13" '
+                        f'fill="#222">{label}</text>'
+                    )
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
