@@ -141,7 +141,8 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     background = canvas.get("background") or "#F7F3EB"
 
     elements: List[Dict[str, Any]] = spec.get("elements", []) or []
-    legend: List[Dict[str, Any]] = spec.get("legend", []) or []
+    legend_title = spec.get("legend", {}).get("title", "Legend")
+    legend_items = spec.get("legend", {}).get("items", [])
     title_text: str = spec.get("title", "") or ""
 
     svg_parts: List[str] = [
