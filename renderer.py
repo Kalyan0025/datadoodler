@@ -354,11 +354,6 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
                     f'<polygon points="{legend_left-5},{ly+7} {legend_left+5},{ly+7} {legend_left},{ly-5}" '
                     f'fill="{color}" stroke="#222" stroke-width="0.7" />'
                 )
-            elif shape == "swirl":
-                svg_parts.append(
-                    f'<path d="M{legend_left},{ly} Q{legend_left + 5},{ly + 10} {legend_left},{ly + 15} Q{legend_left - 5},{ly + 10} {legend_left},{ly}" '
-                    f'fill="none" stroke="{color}" stroke-width="0.7" opacity="0.8" />'
-                )
 
             svg_parts.append(
                 f'<text x="{legend_left + 18}" y="{ly + 4}" '
@@ -368,11 +363,3 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
-"""
-
-# Saving the final version with the shapes properly reflected in the legend
-with open(renderer_file_path, 'w') as file:
-    file.write(updated_renderer_cleaned)
-
-# Output the first few lines to verify
-updated_renderer_cleaned[:1000]
