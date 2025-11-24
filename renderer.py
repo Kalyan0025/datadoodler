@@ -104,29 +104,7 @@ def _compute_bbox(elements: List[Dict[str, Any]], width: int, height: int):
 
     return min_x, min_y, max_x, max_y
 
-def _adjust_legend(legend: List[Dict[str, Any]], canvas_width: int) -> List[Dict[str, Any]]:
-    """Arrange the legend horizontally or vertically based on available space."""
-    legend_area = canvas_width - 40  # 40px padding for edges
-    
-    if len(legend) < 5:
-        space_per_item = legend_area / len(legend)
-        x_position = 20  # Initial offset
-        for item in legend:
-            item['x'] = x_position
-            item['y'] = 850  # Fixed y position for bottom legend
-            x_position += space_per_item
-    else:
-        space_per_item = (canvas_width - 40) / len(legend)
-        y_position = 850
-        for item in legend:
-            item['x'] = 40  # Fixed x position for vertical legend
-            item['y'] = y_position
-            y_position += space_per_item
-
-    return legend
-
 def render_visual_spec(spec: Dict[str, Any]) -> str:
-    """Convert a JSON visual specification into an SVG string."""
     canvas = spec.get("canvas", {}) or {}
     width = int(canvas.get("width", 1200))
     height = int(canvas.get("height", 800))
@@ -165,7 +143,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
     if title_text:
         svg_parts.append(
             f'<text x="{width / 2}" y="50" text-anchor="middle" '
-            f'font-family="Dancing Script, cursive" font-size="24" fill="#222"> '
+            f'font-family="Dancing Script, cursive" font-size="24" fill="#222">'
             f'{_escape(title_text)}</text>'
         )
 
@@ -190,6 +168,7 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
         avail_w = (width - 2 * margin_left_right)
         avail_h = (margin_bottom - margin_top)
 
+        sx = avail_w / (max_
         sx = avail_w / (max_x - min_x)
         sy = avail_h / (max_y - min_y)
         scale = min(sx, sy) * 0.9
