@@ -363,11 +363,3 @@ def render_visual_spec(spec: Dict[str, Any]) -> str:
 
     svg_parts.append("</svg>")
     return "".join(svg_parts)
-"""
-
-# Saving the final version of the code with shape variations in the legend
-with open(renderer_file_path, 'w') as file:
-    file.write(updated_renderer_cleaned)
-
-# Output the first few lines to verify
-updated_renderer_cleaned[:1000]
